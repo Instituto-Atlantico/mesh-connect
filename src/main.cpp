@@ -3,7 +3,7 @@
 #define BLUE_LED 2
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   pinMode(BLUE_LED, OUTPUT);
 }
 
