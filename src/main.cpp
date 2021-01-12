@@ -2,7 +2,6 @@
 #include <WiFi.h>
 
 #include <lwip/sockets.h>
-#include <esp_wifi.h>
 
 int socket_desc;
 const int num_socket_connections = 1;
@@ -53,7 +52,7 @@ int InitializeServer(int domain, int type, int protocol, int num_connections){
     Serial.println("Could not create socket");
     return -1;
   }
-  struct sockaddr_in  server;
+  struct sockaddr_in server;
   //Prepare the sockaddr_in structure
   server.sin_family = AF_INET;
   server.sin_addr.s_addr = INADDR_ANY;
