@@ -73,102 +73,106 @@ void adcComecoSequencial(pessoa *&ponteiroSequencial,int *tamanhoDaListaSequenci
 //Adiciona um membro ao fim da lista
 void adcFimSequencial(pessoa *&ponteiroSequencial,int *tamanhoDaListaSequencial,string nome,int rg,int *posicaoNaLista){
 
-        //Posicao na lista
-        *posicaoNaLista = *tamanhoDaListaSequencial;
+    //Posicao na lista
+    *posicaoNaLista = *tamanhoDaListaSequencial;
 
-        //Cria um vetor com uma posicao a mais
-        pessoa *copiaListaSequencial = new pessoa[*tamanhoDaListaSequencial + 1];
+    //Cria um vetor com uma posicao a mais
+    pessoa *copiaListaSequencial = new pessoa[*tamanhoDaListaSequencial + 1];
 
-        //Posiciona o ultimo elemento no tamanhoNovo -1 , pois come�amos contando do 0
-        copiaListaSequencial[*tamanhoDaListaSequencial].nome = nome;
-        copiaListaSequencial[*tamanhoDaListaSequencial].rg   =   rg;
+    //Posiciona o ultimo elemento no tamanhoNovo -1 , pois come�amos contando do 0
+    copiaListaSequencial[*tamanhoDaListaSequencial].nome = nome;
+    copiaListaSequencial[*tamanhoDaListaSequencial].rg   =   rg;
 
         //Passa os elementos da lista antiga para a nova
-        int cont;
-        for(cont = 0; cont < *tamanhoDaListaSequencial; cont++){
-            copiaListaSequencial[cont].nome = ponteiroSequencial[cont].nome;
-            copiaListaSequencial[cont].rg   =   ponteiroSequencial[cont].rg;
+    int cont;
+    for(cont = 0; cont < *tamanhoDaListaSequencial; cont++)
+        {
+        copiaListaSequencial[cont].nome = ponteiroSequencial[cont].nome;
+        copiaListaSequencial[cont].rg   =   ponteiroSequencial[cont].rg;
         }
 
-        //Faz o ponteiroSequencial apontar para a nova lista com um elemento extra
-        ponteiroSequencial = copiaListaSequencial;
-
-        //Atualiza o tamanho da lista
-        *tamanhoDaListaSequencial = *tamanhoDaListaSequencial + 1;
+    //Faz o ponteiroSequencial apontar para a nova lista com um elemento extra
+    ponteiroSequencial = copiaListaSequencial;
+    //Atualiza o tamanho da lista
+    *tamanhoDaListaSequencial = *tamanhoDaListaSequencial + 1;
 }
 
 //Adiciona um membro numa posicao especifica
 void adcPosicaoSequencial(pessoa *&ponteiroSequencial,int *tamanhoDaListaSequencial,string nome,int rg,int posicao){
 
-        //Cria um vetor com uma posicao a mais
-        pessoa *copiaListaSequencial = new pessoa[*tamanhoDaListaSequencial + 1];
+    //Cria um vetor com uma posicao a mais
+    pessoa *copiaListaSequencial = new pessoa[*tamanhoDaListaSequencial + 1];
 
-        //Passa os elementos da lista antiga para a nova ate o elemento desejado
-        int cont;
-        for(cont = 0; cont < posicao; cont++){
-            copiaListaSequencial[cont].nome = ponteiroSequencial[cont].nome;
-            copiaListaSequencial[cont].rg   =   ponteiroSequencial[cont].rg;
-        }
+    //Passa os elementos da lista antiga para a nova ate o elemento desejado
+    int cont;
+    for(cont = 0; cont < posicao; cont++)
+    {
+        copiaListaSequencial[cont].nome = ponteiroSequencial[cont].nome;
+        copiaListaSequencial[cont].rg   =   ponteiroSequencial[cont].rg;
+    }
 
         //Posiciona o elemento na posicao desejada
-        copiaListaSequencial[posicao].nome = nome;
-        copiaListaSequencial[posicao].rg   =   rg;
+    copiaListaSequencial[posicao].nome = nome;
+    copiaListaSequencial[posicao].rg   =   rg;
 
         //Continua posicionando os outros elementos apos a posicao desejada
-        for(cont = posicao + 1; cont < *tamanhoDaListaSequencial + 1; cont++){
-            copiaListaSequencial[cont].nome = ponteiroSequencial[cont-1].nome;
-            copiaListaSequencial[cont].rg   =   ponteiroSequencial[cont-1].rg;
-        }
+    for(cont = posicao + 1; cont < *tamanhoDaListaSequencial + 1; cont++)
+    {
+        copiaListaSequencial[cont].nome = ponteiroSequencial[cont-1].nome;
+        copiaListaSequencial[cont].rg   =   ponteiroSequencial[cont-1].rg;
+    }
 
         //Faz o ponteiroSequencial apontar para a nova lista com um elemento extra
-        ponteiroSequencial  = copiaListaSequencial;
+    ponteiroSequencial  = copiaListaSequencial;
 
         //Atualiza o tamanho da lista
-        *tamanhoDaListaSequencial = *tamanhoDaListaSequencial + 1;
+    *tamanhoDaListaSequencial = *tamanhoDaListaSequencial + 1;
 }
 
 //Remove o elemento inicial
 void removeInicioSequencial(pessoa *&ponteiroSequencial,int *tamanhoDaListaSequencial){
 
         //Cria um vetor com uma posicao a menos
-        pessoa *copiaListaSequencial = new pessoa[*tamanhoDaListaSequencial - 1];
+    pessoa *copiaListaSequencial = new pessoa[*tamanhoDaListaSequencial - 1];
 
         //Passa os elementos da lista antiga ignorando o primeiro para a nova ate o elemento desejado
-        int cont;
-        for(cont = 1; cont < *tamanhoDaListaSequencial; cont++){
-            copiaListaSequencial[cont-1].nome = ponteiroSequencial[cont].nome;
-            copiaListaSequencial[cont-1].rg = ponteiroSequencial[cont].rg;
-        }
+    int cont;
+    for(cont = 1; cont < *tamanhoDaListaSequencial; cont++)
+    {
+        copiaListaSequencial[cont-1].nome = ponteiroSequencial[cont].nome;
+        copiaListaSequencial[cont-1].rg = ponteiroSequencial[cont].rg;
+    }
 
         //Faz o ponteiroSequencial apontar para a nova lista com um elemento extra
-        ponteiroSequencial = copiaListaSequencial;
+    ponteiroSequencial = copiaListaSequencial;
 
         //Atualiza o tamanho da lista
-        *tamanhoDaListaSequencial = *tamanhoDaListaSequencial - 1;
+    *tamanhoDaListaSequencial = *tamanhoDaListaSequencial - 1;
 
 }
 
 //Remove o elemento final
 void removeFimSequencial(pessoa *&ponteiroSequencial,int *tamanhoDaListaSequencial,int *posicaoNaLista){
 
-        //Posicao na lista
-        *posicaoNaLista = *tamanhoDaListaSequencial - 1;
+    //Posicao na lista
+    *posicaoNaLista = *tamanhoDaListaSequencial - 1;
 
-        //Cria um vetor com uma posicao a menos
-        pessoa *copiaListaSequencial = new pessoa[*tamanhoDaListaSequencial - 1];
+    //Cria um vetor com uma posicao a menos
+    pessoa *copiaListaSequencial = new pessoa[*tamanhoDaListaSequencial - 1];
 
         //Passa os elementos da lista antiga ignorando o primeiro para a nova ate o elemento desejado
-        int cont;
-        for(cont = 0; cont < *tamanhoDaListaSequencial - 1; cont++){
-            copiaListaSequencial[cont].nome = ponteiroSequencial[cont].nome;
-            copiaListaSequencial[cont].rg   =   ponteiroSequencial[cont].rg;
-        }
+    int cont;
+    for(cont = 0; cont < *tamanhoDaListaSequencial - 1; cont++)
+    {
+        copiaListaSequencial[cont].nome = ponteiroSequencial[cont].nome;
+        copiaListaSequencial[cont].rg   =   ponteiroSequencial[cont].rg;
+    }
 
         //Faz o ponteiroSequencial apontar para a nova lista com um elemento extra
-        ponteiroSequencial = copiaListaSequencial;
+    ponteiroSequencial = copiaListaSequencial;
 
         //Atualiza o tamanho da lista
-        *tamanhoDaListaSequencial = *tamanhoDaListaSequencial - 1;
+    *tamanhoDaListaSequencial = *tamanhoDaListaSequencial - 1;
 
 }
 
@@ -176,27 +180,30 @@ void removeFimSequencial(pessoa *&ponteiroSequencial,int *tamanhoDaListaSequenci
 void removePosicaoSequencial(pessoa *&ponteiroSequencial,int *tamanhoDaListaSequencial,int posicao){
 
         //Cria um vetor com uma posicao a mais
-        pessoa *copiaListaSequencial = new pessoa[*tamanhoDaListaSequencial - 1];
+    pessoa *copiaListaSequencial = new pessoa[*tamanhoDaListaSequencial - 1];
 
         //Passa os elementos da lista antiga para a nova ate o elemento desejado
-        int cont;
-        for(cont = 0; cont < *tamanhoDaListaSequencial - 1; cont++){
+    int cont;
+    for(cont = 0; cont < *tamanhoDaListaSequencial - 1; cont++)
+    {
 
-            if(cont < posicao){
-                //Faz uma copia dos elementos ate a posicao
-                copiaListaSequencial[cont].nome = ponteiroSequencial[cont].nome;
-                copiaListaSequencial[cont].rg   =   ponteiroSequencial[cont].rg;
-            }else{
-                //Faz uma copia dos elementos ate a posicao
-                copiaListaSequencial[cont].nome = ponteiroSequencial[cont+1].nome;
-                copiaListaSequencial[cont].rg   =   ponteiroSequencial[cont+1].rg;
-            }
+        if(cont < posicao)
+        {
+            //Faz uma copia dos elementos ate a posicao
+            copiaListaSequencial[cont].nome = ponteiroSequencial[cont].nome;
+            copiaListaSequencial[cont].rg   =   ponteiroSequencial[cont].rg;
+        }
+        else
+        {
+            //Faz uma copia dos elementos ate a posicao
+            copiaListaSequencial[cont].nome = ponteiroSequencial[cont+1].nome;
+            copiaListaSequencial[cont].rg   =   ponteiroSequencial[cont+1].rg;
+        }
 
         }
 
         //Faz o ponteiroSequencial apontar para a nova lista com um elemento extra
         ponteiroSequencial = copiaListaSequencial;
-
         //Atualiza o tamanho da lista
         *tamanhoDaListaSequencial = *tamanhoDaListaSequencial - 1;
 }
@@ -209,16 +216,14 @@ string retornaNomeSequencial(pessoa *&ponteiroSequencial,int *tamanhoDaListaSequ
 
         //Passa os elementos da lista antiga para a nova ate o elemento desejado
         int cont;
-        for(cont = 0; cont < *tamanhoDaListaSequencial; cont++){
-
-            //Se encontrar alguem com o RG procurado
-            if(ponteiroSequencial[cont].rg == rg){
-
+        for(cont = 0; cont < *tamanhoDaListaSequencial; cont++)
+        {
+             //Se encontrar alguem com o RG procurado
+            if(ponteiroSequencial[cont].rg == rg)
+            {
                 //Faz uma copia dos elementos ate a posicao
                 nome = ponteiroSequencial[cont].nome;
-
                 cout << "Encontrado na Posicao:" << cont <<"\n";
-
             }
         }
 
@@ -254,8 +259,8 @@ int main()
     int tamanhoDaListaSequencial = 0;
 
      //Manipula as listas
-    while(funcaoDesejada < 10 && funcaoDesejada > 0){
-
+    while(funcaoDesejada < 10 && funcaoDesejada > 0)
+    {
         cout << "Tamanho Atual[" << tamanhoDaListaSequencial << "]\n";
         cout << "Operacoes \n";
         cout << "1 - Insercao de um node no inicio da lista \n";
@@ -279,7 +284,8 @@ int main()
         string nome;
         int rg, posicao,posicaoNaLista;
 
-        switch(funcaoDesejada){
+        switch(funcaoDesejada)
+        {
             case 1:
 
                 //Cabecalho da acao
@@ -297,7 +303,7 @@ int main()
                 //Exibe o usuario inserido
                 cout << "\nUsuario: " << nome << ",RG: " << rg << " adicionado ao inicio da lista.\n";
 
-                break;
+            break;
 
             case 2:
 
@@ -310,10 +316,13 @@ int main()
                 cout << "Digite o RG: ";
                 cin >> rg;
 
-                if(tamanhoDaListaSequencial == 0){
+                if(tamanhoDaListaSequencial == 0)
+                {
                     //Se for o primeiro da lista cria uma nova lista
                     adcComecoSequencial(ponteiroSequencial,&tamanhoDaListaSequencial, nome, rg);
-                }else{
+                }
+                else
+                {
                     //Adiciona ao fim da Lista
                     adcFimSequencial(ponteiroSequencial,&tamanhoDaListaSequencial, nome, rg, &posicaoNaLista);
                 }
@@ -321,7 +330,7 @@ int main()
                 //Exibe o usuario inserido
                 cout << "Usuario: " << nome << ",RG: " << rg << " adicionado ao fim da lista(" << posicaoNaLista << ")";
 
-                break;
+            break;
 
              case 3:
 
@@ -337,13 +346,18 @@ int main()
                 cin >> rg;
 
                 //Se pedir a primeira posicao
-                if(posicao == 0){
+                if(posicao == 0)
+                {
                     //Se for o primeiro da lista cria uma nova lista
                     adcComecoSequencial(ponteiroSequencial,&tamanhoDaListaSequencial, nome, rg);
-                }else if(posicao == tamanhoDaListaSequencial + 1){
+                }
+                else if(posicao == tamanhoDaListaSequencial + 1)
+                {
                     //Adiciona ao fim da Lista
                     adcFimSequencial(ponteiroSequencial,&tamanhoDaListaSequencial, nome, rg, &posicaoNaLista);
-                }else{
+                }
+                else
+                {
                     //Adiciona numa posicao especifica
                     adcPosicaoSequencial(ponteiroSequencial, &tamanhoDaListaSequencial, nome, rg, posicao);
                 }
@@ -351,7 +365,7 @@ int main()
                 //Exibe o usuario inserido
                 cout << "Usuario: " << nome << ",RG: " << rg << " adicionado na posicao" << posicao<< "da lista.";
 
-                break;
+            break;
 
             case 4:
 
@@ -367,7 +381,7 @@ int main()
                     cout << "Usuario: " << nome <<",RG: "<<rg<< "foi removido do inicio da lista";
                 }
 
-                break;
+            break;
 
             case 5:
 
@@ -383,7 +397,7 @@ int main()
                     cout << "Usuario: "<<nome<<",RG: "<<rg<<" foi removido da posicao " << posicaoNaLista <<" da lista.";
                 }
 
-                break;
+            break;
 
             case 6:
 
@@ -414,7 +428,7 @@ int main()
                 //Exibe o usuario removido
                 cout << "Usuario: "<<nome<<",RG: "<<rg<<" foi removido da posicao "<< posicao <<" da lista.";
 
-                break;
+            break;
 
             case 7:
 
@@ -428,7 +442,7 @@ int main()
                 //Retorna o nome pelo RG
                 cout << "Nome:" << retornaNomeSequencial(ponteiroSequencial, &tamanhoDaListaSequencial, rg, &posicao);
 
-                break;
+            break;
 
             case 8:
 
@@ -437,7 +451,7 @@ int main()
 
                 imprimeSequencial(ponteiroSequencial, tamanhoDaListaSequencial);
 
-                break;
+            break;
         }
     }
 
