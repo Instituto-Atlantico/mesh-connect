@@ -79,7 +79,7 @@ void adcFimSequencial(pessoa *&ponteiroSequencial,int *tamanhoDaListaSequencial,
     //Cria um vetor com uma posicao a mais
     pessoa *copiaListaSequencial = new pessoa[*tamanhoDaListaSequencial + 1];
 
-    //Posiciona o ultimo elemento no tamanhoNovo -1 , pois come�amos contando do 0
+    //Posiciona o ultimo elemento no tamanhoNovo -1 , pois comecamos contando do 0
     copiaListaSequencial[*tamanhoDaListaSequencial].nome = nome;
     copiaListaSequencial[*tamanhoDaListaSequencial].rg   =   rg;
 
@@ -111,31 +111,31 @@ void adcPosicaoSequencial(pessoa *&ponteiroSequencial,int *tamanhoDaListaSequenc
         copiaListaSequencial[cont].rg   =   ponteiroSequencial[cont].rg;
     }
 
-        //Posiciona o elemento na posicao desejada
+    //Posiciona o elemento na posicao desejada
     copiaListaSequencial[posicao].nome = nome;
     copiaListaSequencial[posicao].rg   =   rg;
 
-        //Continua posicionando os outros elementos apos a posicao desejada
+    //Continua posicionando os outros elementos apos a posicao desejada
     for(cont = posicao + 1; cont < *tamanhoDaListaSequencial + 1; cont++)
     {
         copiaListaSequencial[cont].nome = ponteiroSequencial[cont-1].nome;
         copiaListaSequencial[cont].rg   =   ponteiroSequencial[cont-1].rg;
     }
 
-        //Faz o ponteiroSequencial apontar para a nova lista com um elemento extra
+    //Faz o ponteiroSequencial apontar para a nova lista com um elemento extra
     ponteiroSequencial  = copiaListaSequencial;
 
-        //Atualiza o tamanho da lista
+    //Atualiza o tamanho da lista
     *tamanhoDaListaSequencial = *tamanhoDaListaSequencial + 1;
 }
 
 //Remove o elemento inicial
 void removeInicioSequencial(pessoa *&ponteiroSequencial,int *tamanhoDaListaSequencial){
 
-        //Cria um vetor com uma posicao a menos
+    //Cria um vetor com uma posicao a menos
     pessoa *copiaListaSequencial = new pessoa[*tamanhoDaListaSequencial - 1];
 
-        //Passa os elementos da lista antiga ignorando o primeiro para a nova ate o elemento desejado
+    //Passa os elementos da lista antiga ignorando o primeiro para a nova ate o elemento desejado
     int cont;
     for(cont = 1; cont < *tamanhoDaListaSequencial; cont++)
     {
@@ -143,35 +143,35 @@ void removeInicioSequencial(pessoa *&ponteiroSequencial,int *tamanhoDaListaSeque
         copiaListaSequencial[cont-1].rg = ponteiroSequencial[cont].rg;
     }
 
-        //Faz o ponteiroSequencial apontar para a nova lista com um elemento extra
+    //Faz o ponteiroSequencial apontar para a nova lista com um elemento extra
     ponteiroSequencial = copiaListaSequencial;
 
-        //Atualiza o tamanho da lista
+    //Atualiza o tamanho da lista
     *tamanhoDaListaSequencial = *tamanhoDaListaSequencial - 1;
 
 }
 
 //Remove o elemento final
-void removeFimSequencial(pessoa *&ponteiroSequencial,int *tamanhoDaListaSequencial,int *posicaoNaLista){
-
+void removeFimSequencial(pessoa *&ponteiroSequencial,int *tamanhoDaListaSequencial,int *posicaoNaLista)
+{
     //Posicao na lista
     *posicaoNaLista = *tamanhoDaListaSequencial - 1;
-
+    
     //Cria um vetor com uma posicao a menos
     pessoa *copiaListaSequencial = new pessoa[*tamanhoDaListaSequencial - 1];
-
-        //Passa os elementos da lista antiga ignorando o primeiro para a nova ate o elemento desejado
+    
+    //Passa os elementos da lista antiga ignorando o primeiro para a nova ate o elemento desejado
     int cont;
     for(cont = 0; cont < *tamanhoDaListaSequencial - 1; cont++)
     {
         copiaListaSequencial[cont].nome = ponteiroSequencial[cont].nome;
         copiaListaSequencial[cont].rg   =   ponteiroSequencial[cont].rg;
     }
-
-        //Faz o ponteiroSequencial apontar para a nova lista com um elemento extra
+    
+    //Faz o ponteiroSequencial apontar para a nova lista com um elemento extra
     ponteiroSequencial = copiaListaSequencial;
 
-        //Atualiza o tamanho da lista
+    //Atualiza o tamanho da lista
     *tamanhoDaListaSequencial = *tamanhoDaListaSequencial - 1;
 
 }
@@ -179,14 +179,13 @@ void removeFimSequencial(pessoa *&ponteiroSequencial,int *tamanhoDaListaSequenci
 //Remove um elemento por posicao
 void removePosicaoSequencial(pessoa *&ponteiroSequencial,int *tamanhoDaListaSequencial,int posicao){
 
-        //Cria um vetor com uma posicao a mais
+    //Cria um vetor com uma posicao a mais
     pessoa *copiaListaSequencial = new pessoa[*tamanhoDaListaSequencial - 1];
 
-        //Passa os elementos da lista antiga para a nova ate o elemento desejado
+    //Passa os elementos da lista antiga para a nova ate o elemento desejado
     int cont;
     for(cont = 0; cont < *tamanhoDaListaSequencial - 1; cont++)
     {
-
         if(cont < posicao)
         {
             //Faz uma copia dos elementos ate a posicao
@@ -200,40 +199,39 @@ void removePosicaoSequencial(pessoa *&ponteiroSequencial,int *tamanhoDaListaSequ
             copiaListaSequencial[cont].rg   =   ponteiroSequencial[cont+1].rg;
         }
 
-        }
+    }
 
-        //Faz o ponteiroSequencial apontar para a nova lista com um elemento extra
-        ponteiroSequencial = copiaListaSequencial;
-        //Atualiza o tamanho da lista
-        *tamanhoDaListaSequencial = *tamanhoDaListaSequencial - 1;
+    //Faz o ponteiroSequencial apontar para a nova lista com um elemento extra
+    ponteiroSequencial = copiaListaSequencial;
+    //Atualiza o tamanho da lista
+    *tamanhoDaListaSequencial = *tamanhoDaListaSequencial - 1;
 }
 
 //Retorna o nome pelo RG
 string retornaNomeSequencial(pessoa *&ponteiroSequencial,int *tamanhoDaListaSequencial,int rg,int *posicao){
 
         //Nome a ser retornado
-        string nome = "Nao Encontrado";
+    string nome = "Nao Encontrado";
 
         //Passa os elementos da lista antiga para a nova ate o elemento desejado
-        int cont;
-        for(cont = 0; cont < *tamanhoDaListaSequencial; cont++)
+    int cont;
+    for(cont = 0; cont < *tamanhoDaListaSequencial; cont++)
+    {
+        //Se encontrar alguem com o RG procurado
+        if(ponteiroSequencial[cont].rg == rg)
         {
-             //Se encontrar alguem com o RG procurado
-            if(ponteiroSequencial[cont].rg == rg)
-            {
-                //Faz uma copia dos elementos ate a posicao
-                nome = ponteiroSequencial[cont].nome;
-                cout << "Encontrado na Posicao:" << cont <<"\n";
-            }
+            //Faz uma copia dos elementos ate a posicao
+            nome = ponteiroSequencial[cont].nome;
+            cout << "Encontrado na Posicao:" << cont <<"\n";
         }
+    }
 
-        return nome;
+    return nome;
 
 }
 
 int main()
 {
-
     //Variaveis
     int funcaoDesejada = 1;
 
@@ -303,7 +301,7 @@ int main()
                 //Exibe o usuario inserido
                 cout << "\nUsuario: " << nome << ",RG: " << rg << " adicionado ao inicio da lista.\n";
 
-            break;
+                break;
 
             case 2:
 
@@ -330,9 +328,9 @@ int main()
                 //Exibe o usuario inserido
                 cout << "Usuario: " << nome << ",RG: " << rg << " adicionado ao fim da lista(" << posicaoNaLista << ")";
 
-            break;
+                break;
 
-             case 3:
+            case 3:
 
                 //Cabecalho da acao
                 cout << "Funcao Escolhida: Inserir um node na posicao N da lista";
@@ -365,7 +363,7 @@ int main()
                 //Exibe o usuario inserido
                 cout << "Usuario: " << nome << ",RG: " << rg << " adicionado na posicao" << posicao<< "da lista.";
 
-            break;
+                break;
 
             case 4:
 
@@ -381,7 +379,7 @@ int main()
                     cout << "Usuario: " << nome <<",RG: "<<rg<< "foi removido do inicio da lista";
                 }
 
-            break;
+                break;
 
             case 5:
 
@@ -397,7 +395,7 @@ int main()
                     cout << "Usuario: "<<nome<<",RG: "<<rg<<" foi removido da posicao " << posicaoNaLista <<" da lista.";
                 }
 
-            break;
+                break;
 
             case 6:
 
@@ -428,7 +426,7 @@ int main()
                 //Exibe o usuario removido
                 cout << "Usuario: "<<nome<<",RG: "<<rg<<" foi removido da posicao "<< posicao <<" da lista.";
 
-            break;
+                break;
 
             case 7:
 
@@ -442,7 +440,7 @@ int main()
                 //Retorna o nome pelo RG
                 cout << "Nome:" << retornaNomeSequencial(ponteiroSequencial, &tamanhoDaListaSequencial, rg, &posicao);
 
-            break;
+                break;
 
             case 8:
 
@@ -451,9 +449,8 @@ int main()
 
                 imprimeSequencial(ponteiroSequencial, tamanhoDaListaSequencial);
 
-            break;
+                break;
         }
     }
-
     return 0;
 }
