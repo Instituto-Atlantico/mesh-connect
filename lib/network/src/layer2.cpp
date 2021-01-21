@@ -14,6 +14,12 @@ static inline ieee80211_frame_type_t getFrameType(void* buffer) {
   return isQoS ? WIFI_QOSDATA_FRAME : WIFI_DATA_FRAME;
 }
 
+static inline bool isRFC1042Compliant(ieee80211_llc_headers_t* llc) {
+  return llc != nullptr && llc->ssap == 0xAA && llc->dsap == 0xAA &&
+         llc->control == 0x3 && llc->oui[0] == 0 && llc->oui[1] == 0 &&
+         llc->oui[2] == 0;
+}
+
 layer2_data_t getLayer2Data(void* buffer) {
   ieee80211_mac_data_headers_t* mac = nullptr;
   ieee80211_llc_headers_t* llc = nullptr;
@@ -41,10 +47,7 @@ layer2_data_t getLayer2Data(void* buffer) {
 
   layer2_data_t layer2data{.type = ETHER_TYPE_UNKNOWN};
 
-  // 802.11 uses fixed values from RFC 1042
-  if (llc != nullptr && llc->ssap == 0xAA && llc->dsap == 0xAA &&
-      llc->control == 0x3 && llc->oui[0] == 0 && llc->oui[1] == 0 &&
-      llc->oui[2] == 0) {
+  if (isRFC1042Compliant(llc)) {
     layer2data.type = (ether_type_t)ntohs(llc->type);
     layer2data.payload = payload;
     for (int i = 0; i < 6; i++) {
