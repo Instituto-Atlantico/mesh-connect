@@ -1,5 +1,5 @@
-#ifndef _NETWORK_H_
-#define _NETWORK_H_
+#ifndef _LAYER3_H_
+#define _LAYER3_H_
 
 #include <inttypes.h>
 
