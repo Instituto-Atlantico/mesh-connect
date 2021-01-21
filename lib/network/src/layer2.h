@@ -83,8 +83,9 @@ typedef struct {
   uint8_t source[6];
   uint8_t destination[6];
   void* payload;
+  uint16_t length;
 } layer2_data_t;
 
-layer2_data_t getLayer2Data(void* buffer);
+layer2_data_t getLayer2Data(void* buffer, uint16_t length);
 
 #endif

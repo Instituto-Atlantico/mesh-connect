@@ -62,7 +62,7 @@ void AccessPoint::handleIncomingDataPacket(wifi_promiscuous_pkt_t* packet) {
   status.length = EXPONENTIAL_SMOOTHING_ALPHA * packet->rx_ctrl.sig_len +
                   (1 - EXPONENTIAL_SMOOTHING_ALPHA) * status.length;
 
-  layer2_data_t l2data = getLayer2Data(packet->payload);
+  auto l2data = getLayer2Data(packet->payload, packet->rx_ctrl.sig_len);
   // TODO send to a queue...
 }
 
