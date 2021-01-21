@@ -9,7 +9,7 @@
 #define MAX_TX_POWER 82
 #define DEFAULT_CHANNEL 13
 
-#define EXPONENTIAL_SMOOTHING_ALPHA 0.7
+#define EXPONENTIAL_SMOOTHING_ALPHA 0.3
 
 AccessPoint* apInstance = nullptr;
 
@@ -63,33 +63,7 @@ void AccessPoint::handleIncomingDataPacket(wifi_promiscuous_pkt_t* packet) {
                   (1 - EXPONENTIAL_SMOOTHING_ALPHA) * status.length;
 
   layer2_data_t l2data = getLayer2Data(packet->payload);
-
-  switch (l2data.type) {
-    case ETHER_TYPE_IPV4: {
-      ipv4_headers_t* ipv4 = (ipv4_headers_t*)l2data.payload;
-      Serial.print("SRC IPv4: ");
-      Serial.print(ipv4->source[0]);
-      Serial.print(".");
-      Serial.print(ipv4->source[1]);
-      Serial.print(".");
-      Serial.print(ipv4->source[2]);
-      Serial.print(".");
-      Serial.print(ipv4->source[3]);
-      Serial.print(" DST IPv4: ");
-      Serial.print(ipv4->destination[0]);
-      Serial.print(".");
-      Serial.print(ipv4->destination[1]);
-      Serial.print(".");
-      Serial.print(ipv4->destination[2]);
-      Serial.print(".");
-      Serial.println(ipv4->destination[3]);
-      break;
-    }
-    case ETHER_TYPE_ARP:
-    case ETHER_TYPE_IPV6:
-    case ETHER_TYPE_UNKNOWN:
-      break;
-  }
+  // TODO send to a queue...
 }
 
 #endif
