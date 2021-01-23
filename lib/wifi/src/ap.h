@@ -2,6 +2,7 @@
 #define _AP_H_
 
 #include <WiFi.h>
+#include <dataqueue.h>
 #include <esp_wifi.h>
 
 typedef struct {
@@ -14,9 +15,10 @@ typedef struct {
 class AccessPoint {
  private:
   ap_status_t status;
+  DataQueue* rxQueue;
 
  public:
-  AccessPoint(const char* ssid);
+  AccessPoint(const char* ssid, DataQueue* rxQueue);
 
   IPAddress getIPAddress();
   uint8_t getNumberOfClients();

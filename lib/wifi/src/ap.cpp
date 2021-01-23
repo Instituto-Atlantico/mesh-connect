@@ -13,20 +13,27 @@
 
 AccessPoint* apInstance = nullptr;
 
-const wifi_promiscuous_filter_t promiscuousFilter{
+static const wifi_promiscuous_filter_t promiscuousFilter{
     .filter_mask = WIFI_PROMIS_FILTER_MASK_DATA_MPDU,
 };
 
-void receiveCallback(void* buf, wifi_promiscuous_pkt_type_t type) {
+template <typename T>
+static inline void exponentialSmoothing(T& metric, T current) {
+  metric = current * EXPONENTIAL_SMOOTHING_ALPHA +
+           metric * (1 - EXPONENTIAL_SMOOTHING_ALPHA);
+}
+
+static void receiveCallback(void* buf, wifi_promiscuous_pkt_type_t type) {
   apInstance->handleIncomingDataPacket((wifi_promiscuous_pkt_t*)buf);
 }
 
-AccessPoint::AccessPoint(const char* ssid) {
+AccessPoint::AccessPoint(const char* ssid, DataQueue* rxQueue) {
   if (apInstance != nullptr)
     throw "Cannot have multiple AccessPoint instances";
   apInstance = this;
 
   memset(&status, 0, sizeof(ap_status_t));
+  this->rxQueue = rxQueue;
 
   if (!WiFi.softAP(ssid, nullptr, DEFAULT_CHANNEL, false, MAX_CLIENTS))
     throw "Cannot start AP";
@@ -51,19 +58,30 @@ ap_status_t AccessPoint::getStatus() {
 }
 
 void AccessPoint::handleIncomingDataPacket(wifi_promiscuous_pkt_t* packet) {
+  // update counters
   status.rxFrames++;
   if (packet->rx_ctrl.rx_state != 0) {
     status.rxErrors++;
     return;
   }
 
-  status.rssi = EXPONENTIAL_SMOOTHING_ALPHA * packet->rx_ctrl.rssi +
-                (1 - EXPONENTIAL_SMOOTHING_ALPHA) * status.rssi;
-  status.length = EXPONENTIAL_SMOOTHING_ALPHA * packet->rx_ctrl.sig_len +
-                  (1 - EXPONENTIAL_SMOOTHING_ALPHA) * status.length;
+  exponentialSmoothing<int16_t>(status.rssi, packet->rx_ctrl.rssi);
+  exponentialSmoothing<uint16_t>(status.length, packet->rx_ctrl.sig_len);
 
+  // get layer 2 data
   auto l2data = getLayer2Data(packet->payload, packet->rx_ctrl.sig_len);
-  // TODO send to a queue...
+
+  // alocating memory for the data to be read elsewhere
+  void* payload = malloc(l2data.length);
+  if (payload == nullptr) {
+    status.rxErrors++;
+    return;
+  }
+  memcpy(payload, l2data.payload, l2data.length);
+  l2data.payload = payload;
+
+  // send to the queue
+  rxQueue->push(&l2data);
 }
 
 #endif

@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <ap.h>
+#include <dataqueue.h>
 #include <display.h>
 
 #define BLUE_LED 2
@@ -10,9 +11,11 @@
 #define OLED_SCREEN_WIDTH 128
 #define OLED_SCREEN_HEIGHT 64
 
+#define DATA_QUEUE_LENGTH 10
 #define ACCESS_POINT_SSID "MeshConnect"
 
 Display* display;
+DataQueue* queue;
 AccessPoint* ap;
 
 void setup() {
@@ -21,8 +24,8 @@ void setup() {
 
   display = new Display(OLED_SDA, OLED_SCL, OLED_RST, OLED_SCREEN_WIDTH,
                         OLED_SCREEN_HEIGHT);
-
-  ap = new AccessPoint(ACCESS_POINT_SSID);
+  queue = new DataQueue(DATA_QUEUE_LENGTH);
+  ap = new AccessPoint(ACCESS_POINT_SSID, queue);
 }
 
 void loop() {
@@ -35,9 +38,7 @@ void loop() {
   display->print("Clients: ");
   display->println(ap->getNumberOfClients());
 
-  display->println("--- STATUS ---");
   auto status = ap->getStatus();
-
   display->print("RX Frames: ");
   display->println(status.rxFrames);
   display->print("RX Errors: ");
@@ -46,6 +47,10 @@ void loop() {
   display->println(status.rssi);
   display->print("Avg Len: ");
   display->println(status.length);
+
+  auto queueStatus = queue->getStatus();
+  display->print("Queue Drops: ");
+  display->println(queueStatus.drops);
 
   display->display();
   digitalWrite(BLUE_LED, LOW);
