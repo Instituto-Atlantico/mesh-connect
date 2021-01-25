@@ -4,24 +4,17 @@
 #include <ap.h>
 #include <layer2.h>
 #include <layer3.h>
+#include <metrics.h>
 
 #define MAX_CLIENTS 4
 #define MAX_TX_POWER 82
 #define DEFAULT_CHANNEL 13
-
-#define EXPONENTIAL_SMOOTHING_ALPHA 0.3
 
 AccessPoint* apInstance = nullptr;
 
 static const wifi_promiscuous_filter_t promiscuousFilter{
     .filter_mask = WIFI_PROMIS_FILTER_MASK_DATA_MPDU,
 };
-
-template <typename T>
-static inline void exponentialSmoothing(T& metric, T current) {
-  metric = current * EXPONENTIAL_SMOOTHING_ALPHA +
-           metric * (1 - EXPONENTIAL_SMOOTHING_ALPHA);
-}
 
 static void receiveCallback(void* buf, wifi_promiscuous_pkt_type_t type) {
   apInstance->receive((wifi_promiscuous_pkt_t*)buf);
