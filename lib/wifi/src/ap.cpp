@@ -24,19 +24,32 @@ static inline void exponentialSmoothing(T& metric, T current) {
 }
 
 static void receiveCallback(void* buf, wifi_promiscuous_pkt_type_t type) {
-  apInstance->handleIncomingDataPacket((wifi_promiscuous_pkt_t*)buf);
+  apInstance->receive((wifi_promiscuous_pkt_t*)buf);
 }
 
-AccessPoint::AccessPoint(const char* ssid, DataQueue* rxQueue) {
+static void transmitTask(void* pointer) {
+  auto ap = (AccessPoint*)pointer;
+  for (;;) {
+    ap->transmit();
+  }
+}
+
+AccessPoint::AccessPoint(const char* ssid,
+                         DataQueue* rxQueue,
+                         DataQueue* txQueue) {
   if (apInstance != nullptr)
     throw "Cannot have multiple AccessPoint instances";
   apInstance = this;
 
   memset(&status, 0, sizeof(ap_status_t));
   this->rxQueue = rxQueue;
+  this->txQueue = txQueue;
 
   if (!WiFi.softAP(ssid, nullptr, DEFAULT_CHANNEL, false, MAX_CLIENTS))
     throw "Cannot start AP";
+
+  xTaskCreatePinnedToCore(transmitTask, "WiFiTransmitter", 10000, this, 0,
+                          &taskHandle, 1);
 
   ESP_ERROR_CHECK(esp_wifi_set_promiscuous_filter(&promiscuousFilter));
   ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(&receiveCallback));
@@ -57,7 +70,7 @@ ap_status_t AccessPoint::getStatus() {
   return this->status;
 }
 
-void AccessPoint::handleIncomingDataPacket(wifi_promiscuous_pkt_t* packet) {
+void AccessPoint::receive(wifi_promiscuous_pkt_t* packet) {
   // update counters
   status.rxFrames++;
   if (packet->rx_ctrl.rx_state != 0) {
@@ -70,6 +83,8 @@ void AccessPoint::handleIncomingDataPacket(wifi_promiscuous_pkt_t* packet) {
 
   // get layer 2 data
   auto l2data = getLayer2Data(packet->payload, packet->rx_ctrl.sig_len);
+  if (l2data.length <= 0)
+    return;
 
   // alocating memory for the data to be read elsewhere
   void* payload = malloc(l2data.length);
@@ -82,6 +97,17 @@ void AccessPoint::handleIncomingDataPacket(wifi_promiscuous_pkt_t* packet) {
 
   // send to the queue
   rxQueue->push(&l2data);
+}
+
+void AccessPoint::transmit() {
+  auto layer2Data = txQueue->poll();
+  if (layer2Data == nullptr)
+    return;
+
+  // send over 802.11
+
+  free(layer2Data->payload);
+  free(layer2Data);
 }
 
 #endif

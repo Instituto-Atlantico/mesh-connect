@@ -14,17 +14,20 @@ typedef struct {
 
 class AccessPoint {
  private:
+  TaskHandle_t taskHandle;
   ap_status_t status;
   DataQueue* rxQueue;
+  DataQueue* txQueue;
 
  public:
-  AccessPoint(const char* ssid, DataQueue* rxQueue);
+  AccessPoint(const char* ssid, DataQueue* rxQueue, DataQueue* txQueue);
 
   IPAddress getIPAddress();
   uint8_t getNumberOfClients();
   ap_status_t getStatus();
 
-  void handleIncomingDataPacket(wifi_promiscuous_pkt_t* packet);
+  void receive(wifi_promiscuous_pkt_t* packet);
+  void transmit();
 };
 
 #endif

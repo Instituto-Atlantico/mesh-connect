@@ -2,6 +2,7 @@
 #include <ap.h>
 #include <dataqueue.h>
 #include <display.h>
+#include <loramesh.h>
 
 #define BLUE_LED 2
 
@@ -15,8 +16,10 @@
 #define ACCESS_POINT_SSID "MeshConnect"
 
 Display* display;
-DataQueue* queue;
+DataQueue* wifiToLoraQueue;
+DataQueue* loraToWifiQueue;
 AccessPoint* ap;
+LoraMesh* mesh;
 
 void setup() {
   Serial.begin(115200);
@@ -24,8 +27,10 @@ void setup() {
 
   display = new Display(OLED_SDA, OLED_SCL, OLED_RST, OLED_SCREEN_WIDTH,
                         OLED_SCREEN_HEIGHT);
-  queue = new DataQueue(DATA_QUEUE_LENGTH);
-  ap = new AccessPoint(ACCESS_POINT_SSID, queue);
+  wifiToLoraQueue = new DataQueue(DATA_QUEUE_LENGTH);
+  loraToWifiQueue = new DataQueue(DATA_QUEUE_LENGTH);
+  ap = new AccessPoint(ACCESS_POINT_SSID, wifiToLoraQueue, loraToWifiQueue);
+  mesh = new LoraMesh(wifiToLoraQueue, loraToWifiQueue);
 }
 
 void loop() {
@@ -48,9 +53,10 @@ void loop() {
   display->print("Avg Len: ");
   display->println(status.length);
 
-  auto queueStatus = queue->getStatus();
-  display->print("Queue Drops: ");
-  display->println(queueStatus.drops);
+  display->print("Drops (L/W): ");
+  display->print(wifiToLoraQueue->getStatus().drops);
+  display->print("/");
+  display->print(loraToWifiQueue->getStatus().drops);
 
   display->display();
   digitalWrite(BLUE_LED, LOW);

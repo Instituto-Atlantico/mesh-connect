@@ -19,9 +19,20 @@ void DataQueue::push(layer2_data_t* data) {
   }
 }
 
-layer2_data_t DataQueue::remove() {
-  layer2_data_t data;
-  xQueueReceive(queue, &data, portMAX_DELAY);
+layer2_data_t* DataQueue::poll() {
+  if (uxQueueMessagesWaiting(queue) == 0)
+    return nullptr;
+
+  layer2_data_t* data = (layer2_data_t*)malloc(sizeof(layer2_data_t));
+  if (data == nullptr)
+    return nullptr;
+
+  auto result = xQueueReceive(queue, data, 0);
+  if (result == pdFALSE) {
+    free(data);
+    return nullptr;
+  }
+
   return data;
 }
 

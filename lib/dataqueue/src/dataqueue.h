@@ -20,7 +20,7 @@ class DataQueue {
   DataQueue(int capacity);
 
   void push(layer2_data_t*);
-  layer2_data_t remove();
+  layer2_data_t* poll();
 
   data_queue_status_t getStatus();
 };
