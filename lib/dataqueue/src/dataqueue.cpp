@@ -2,7 +2,6 @@
 #define _DATAQUEUE_CPP_
 
 #include <dataqueue.h>
-#include <cstring>  //for memcpy
 
 DataQueue::DataQueue(int capacity) {
   queue = xQueueCreate(capacity, sizeof(layer2_data_t));
