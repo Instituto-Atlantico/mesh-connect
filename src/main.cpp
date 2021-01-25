@@ -1,6 +1,8 @@
 #include <Arduino.h>
 #include <ap.h>
+#include <dataqueue.h>
 #include <display.h>
+#include <loramesh.h>
 
 #define BLUE_LED 2
 
@@ -10,10 +12,14 @@
 #define OLED_SCREEN_WIDTH 128
 #define OLED_SCREEN_HEIGHT 64
 
+#define DATA_QUEUE_LENGTH 10
 #define ACCESS_POINT_SSID "MeshConnect"
 
 Display* display;
+DataQueue<layer2_data_t>* wifiToLoraQueue;
+DataQueue<layer2_data_t>* loraToWifiQueue;
 AccessPoint* ap;
+LoraMesh* mesh;
 
 void setup() {
   Serial.begin(115200);
@@ -21,8 +27,10 @@ void setup() {
 
   display = new Display(OLED_SDA, OLED_SCL, OLED_RST, OLED_SCREEN_WIDTH,
                         OLED_SCREEN_HEIGHT);
-
-  ap = new AccessPoint(ACCESS_POINT_SSID);
+  wifiToLoraQueue = new DataQueue<layer2_data_t>(DATA_QUEUE_LENGTH);
+  loraToWifiQueue = new DataQueue<layer2_data_t>(DATA_QUEUE_LENGTH);
+  ap = new AccessPoint(ACCESS_POINT_SSID, wifiToLoraQueue, loraToWifiQueue);
+  mesh = new LoraMesh(wifiToLoraQueue, loraToWifiQueue);
 }
 
 void loop() {
@@ -35,9 +43,7 @@ void loop() {
   display->print("Clients: ");
   display->println(ap->getNumberOfClients());
 
-  display->println("--- STATUS ---");
   auto status = ap->getStatus();
-
   display->print("RX Frames: ");
   display->println(status.rxFrames);
   display->print("RX Errors: ");
@@ -46,6 +52,11 @@ void loop() {
   display->println(status.rssi);
   display->print("Avg Len: ");
   display->println(status.length);
+
+  display->print("Drops (L/W): ");
+  display->print(wifiToLoraQueue->getStatus().drops);
+  display->print("/");
+  display->print(loraToWifiQueue->getStatus().drops);
 
   display->display();
   digitalWrite(BLUE_LED, LOW);
