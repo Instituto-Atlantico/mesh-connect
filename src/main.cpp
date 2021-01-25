@@ -16,8 +16,8 @@
 #define ACCESS_POINT_SSID "MeshConnect"
 
 Display* display;
-DataQueue* wifiToLoraQueue;
-DataQueue* loraToWifiQueue;
+DataQueue<layer2_data_t>* wifiToLoraQueue;
+DataQueue<layer2_data_t>* loraToWifiQueue;
 AccessPoint* ap;
 LoraMesh* mesh;
 
@@ -27,8 +27,8 @@ void setup() {
 
   display = new Display(OLED_SDA, OLED_SCL, OLED_RST, OLED_SCREEN_WIDTH,
                         OLED_SCREEN_HEIGHT);
-  wifiToLoraQueue = new DataQueue(DATA_QUEUE_LENGTH);
-  loraToWifiQueue = new DataQueue(DATA_QUEUE_LENGTH);
+  wifiToLoraQueue = new DataQueue<layer2_data_t>(DATA_QUEUE_LENGTH);
+  loraToWifiQueue = new DataQueue<layer2_data_t>(DATA_QUEUE_LENGTH);
   ap = new AccessPoint(ACCESS_POINT_SSID, wifiToLoraQueue, loraToWifiQueue);
   mesh = new LoraMesh(wifiToLoraQueue, loraToWifiQueue);
 }

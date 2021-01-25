@@ -28,8 +28,8 @@ static void transmitTask(void* pointer) {
 }
 
 AccessPoint::AccessPoint(const char* ssid,
-                         DataQueue* rxQueue,
-                         DataQueue* txQueue) {
+                         DataQueue<layer2_data_t>* rxQueue,
+                         DataQueue<layer2_data_t>* txQueue) {
   if (apInstance != nullptr)
     throw "Cannot have multiple AccessPoint instances";
   apInstance = this;

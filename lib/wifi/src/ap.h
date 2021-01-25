@@ -4,6 +4,7 @@
 #include <WiFi.h>
 #include <dataqueue.h>
 #include <esp_wifi.h>
+#include <layer2.h>
 
 typedef struct {
   uint32_t rxFrames;
@@ -16,11 +17,13 @@ class AccessPoint {
  private:
   TaskHandle_t taskHandle;
   ap_status_t status;
-  DataQueue* rxQueue;
-  DataQueue* txQueue;
+  DataQueue<layer2_data_t>* rxQueue;
+  DataQueue<layer2_data_t>* txQueue;
 
  public:
-  AccessPoint(const char* ssid, DataQueue* rxQueue, DataQueue* txQueue);
+  AccessPoint(const char* ssid,
+              DataQueue<layer2_data_t>* rxQueue,
+              DataQueue<layer2_data_t>* txQueue);
 
   IPAddress getIPAddress();
   uint8_t getNumberOfClients();

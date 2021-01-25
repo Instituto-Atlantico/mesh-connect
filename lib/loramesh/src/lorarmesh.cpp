@@ -11,7 +11,8 @@ static void task(void* pointer) {
   }
 }
 
-LoraMesh::LoraMesh(DataQueue* txQueue, DataQueue* rxQueue) {
+LoraMesh::LoraMesh(DataQueue<layer2_data_t>* txQueue,
+                   DataQueue<layer2_data_t>* rxQueue) {
   this->txQueue = txQueue;
   this->rxQueue = rxQueue;
   xTaskCreatePinnedToCore(task, "LoraMesh", 10000, this, 0, &taskHandle, 0);
