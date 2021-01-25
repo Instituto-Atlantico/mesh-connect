@@ -97,8 +97,9 @@ void AccessPoint::transmit() {
   if (layer2Data == nullptr)
     return;
 
-  // send over 802.11
+  // TODO send over 802.11
 
+  // Freeing data that will be alocated at LoRa reception
   free(layer2Data->payload);
   free(layer2Data);
 }
