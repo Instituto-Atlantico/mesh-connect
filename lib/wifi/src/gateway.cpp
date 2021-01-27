@@ -30,9 +30,9 @@ Gateway::Gateway(const char* gwSSID,
 
   WiFi.begin(gwSSID, nullptr);
   while (WiFi.status() != WL_CONNECTED)
-    ;  // TODO add error handling
+    ;
 
-  // TODO enable auto connect
+  WiFi.setAutoReconnect(true);
 }
 
 wifi_node_status_t Gateway::getStatus() {
