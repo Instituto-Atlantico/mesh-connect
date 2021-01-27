@@ -2,6 +2,7 @@
 #include <ap.h>
 #include <dataqueue.h>
 #include <display.h>
+#include <gateway.h>
 #include <loramesh.h>
 
 #define BLUE_LED 2
@@ -14,11 +15,12 @@
 
 #define DATA_QUEUE_LENGTH 10
 #define ACCESS_POINT_SSID "MeshConnect"
+#define GATEWAY_SSID "MeshConnectGWAP"
 
 Display* display;
 DataQueue<layer2_data_t>* wifiToLoraQueue;
 DataQueue<layer2_data_t>* loraToWifiQueue;
-AccessPoint* ap;
+WifiNode* wifi;
 LoraMesh* mesh;
 
 void setup() {
@@ -27,10 +29,17 @@ void setup() {
 
   display = new Display(OLED_SDA, OLED_SCL, OLED_RST, OLED_SCREEN_WIDTH,
                         OLED_SCREEN_HEIGHT);
+
   wifiToLoraQueue = new DataQueue<layer2_data_t>(DATA_QUEUE_LENGTH);
   loraToWifiQueue = new DataQueue<layer2_data_t>(DATA_QUEUE_LENGTH);
-  ap = new AccessPoint(ACCESS_POINT_SSID, wifiToLoraQueue, loraToWifiQueue);
+
   mesh = new LoraMesh(wifiToLoraQueue, loraToWifiQueue);
+
+  if (shouldEnableGateway(GATEWAY_SSID)) {
+    wifi = new Gateway(GATEWAY_SSID, wifiToLoraQueue, loraToWifiQueue);
+  } else {
+    wifi = new AccessPoint(ACCESS_POINT_SSID, wifiToLoraQueue, loraToWifiQueue);
+  }
 }
 
 void loop() {
@@ -38,19 +47,19 @@ void loop() {
   display->clearDisplay();
   display->setCursor(0, 0);
 
+  display->print("Mode: ");
+  display->println(wifi->getMode());
   display->print("IP: ");
-  display->println(ap->getIPAddress());
-  display->print("Clients: ");
-  display->println(ap->getNumberOfClients());
+  display->println(wifi->getIPAddress());
 
-  auto status = ap->getStatus();
+  auto status = wifi->getStatus();
   display->print("RX Frames: ");
   display->println(status.rxFrames);
   display->print("RX Errors: ");
   display->println(status.rxErrors);
-  display->print("Avg RSSI: ");
+  display->print("RSSI: ");
   display->println(status.rssi);
-  display->print("Avg Len: ");
+  display->print("Len: ");
   display->println(status.length);
 
   display->print("Drops (L/W): ");
