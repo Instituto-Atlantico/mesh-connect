@@ -1,6 +1,7 @@
 #ifndef _WIFINODE_H_
 #define _WIFINODE_H_
 
+#include <WiFi.h>
 #include <inttypes.h>
 
 typedef struct {

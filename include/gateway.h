@@ -3,7 +3,7 @@
 
 #include <dataqueue.h>
 #include <layer2.h>
-#include <wifinode.h>
+#include "wifinode.h"
 
 #define SCAN_ATTEMPTS 3
 

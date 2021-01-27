@@ -1,8 +1,7 @@
 #ifndef _WIFINODE_CPP_
 #define _WIFINODE_CPP_
 
-#include <WiFi.h>
-#include <wifinode.h>
+#include "wifinode.h"
 
 WifiNode::WifiNode() {
   memset(&status, 0, sizeof(status));

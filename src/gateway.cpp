@@ -1,9 +1,9 @@
 #ifndef _GATEWAY_CPP_
 #define _GATEWAY_CPP_
 
+#include "gateway.h"
 #include <WiFi.h>
 #include <esp_wifi.h>
-#include <gateway.h>
 
 bool shouldEnableGateway(const char* gwSSID, int scanAttempts) {
   for (int i = 0; i < scanAttempts; i++) {

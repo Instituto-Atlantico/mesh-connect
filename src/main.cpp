@@ -1,9 +1,9 @@
 #include <Arduino.h>
-#include <ap.h>
 #include <dataqueue.h>
 #include <display.h>
-#include <gateway.h>
-#include <loramesh.h>
+#include "ap.h"
+#include "gateway.h"
+#include "loramesh.h"
 
 #define BLUE_LED 2
 

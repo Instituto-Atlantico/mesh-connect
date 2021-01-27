@@ -1,7 +1,7 @@
 #ifndef _LORAMESH_CPP_
 #define _LORAMESH_CPP_
 
-#include <loramesh.h>
+#include "loramesh.h"
 
 static void task(void* pointer) {
   auto loraMesh = (LoraMesh*)pointer;

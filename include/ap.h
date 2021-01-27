@@ -5,7 +5,7 @@
 #include <dataqueue.h>
 #include <esp_wifi.h>
 #include <layer2.h>
-#include <wifinode.h>
+#include "wifinode.h"
 
 class AccessPoint : public WifiNode {
  private:
