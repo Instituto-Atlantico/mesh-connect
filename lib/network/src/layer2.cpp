@@ -1,6 +1,3 @@
-#ifndef _LAYER2_CPP_
-#define _LAYER2_CPP_
-
 #include <layer2.h>
 #include <lwip/def.h>
 
@@ -69,5 +66,3 @@ layer2_data_t getLayer2Data(void* buffer, uint16_t length) {
 
   return layer2data;
 }
-
-#endif

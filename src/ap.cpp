@@ -1,6 +1,3 @@
-#ifndef _AP_CPP_
-#define _AP_CPP_
-
 #include "ap.h"
 #include <metrics.h>
 
@@ -90,5 +87,3 @@ void AccessPoint::transmit() {
 end:
   free(message);
 }
-
-#endif

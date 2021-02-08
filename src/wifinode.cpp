@@ -1,6 +1,3 @@
-#ifndef _WIFINODE_CPP_
-#define _WIFINODE_CPP_
-
 #include "wifinode.h"
 
 WifiNode::WifiNode() {
@@ -21,5 +18,3 @@ uint8_t WifiNode::getNumberOfClients() {
 wifi_node_status_t WifiNode::getStatus() {
   return this->status;
 }
-
-#endif

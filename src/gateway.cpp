@@ -1,6 +1,3 @@
-#ifndef _GATEWAY_CPP_
-#define _GATEWAY_CPP_
-
 #include "gateway.h"
 #include <WiFi.h>
 #include <esp_wifi.h>
@@ -51,5 +48,3 @@ wifi_node_status_t Gateway::getStatus() {
 
   return WifiNode::getStatus();
 }
-
-#endif

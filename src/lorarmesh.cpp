@@ -1,6 +1,3 @@
-#ifndef _LORAMESH_CPP_
-#define _LORAMESH_CPP_
-
 #include "loramesh.h"
 
 static void task(void* pointer) {
@@ -32,5 +29,3 @@ void LoraMesh::transmit() {
 }
 
 void LoraMesh::receive() {}
-
-#endif
