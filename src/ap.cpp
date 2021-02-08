@@ -2,7 +2,6 @@
 #define _AP_CPP_
 
 #include "ap.h"
-#include <layer2.h>
 #include <metrics.h>
 
 #define MAX_CLIENTS 4
@@ -27,8 +26,8 @@ static void transmitTask(void* pointer) {
 }
 
 AccessPoint::AccessPoint(const char* ssid,
-                         DataQueue<layer2_data_t>* rxQueue,
-                         DataQueue<layer2_data_t>* txQueue) {
+                         DataQueue<message_t>* rxQueue,
+                         DataQueue<message_t>* txQueue) {
   if (apInstance != nullptr)
     throw "Cannot have multiple AccessPoint instances";
   apInstance = this;
@@ -75,19 +74,21 @@ void AccessPoint::receive(wifi_promiscuous_pkt_t* packet) {
   l2data.payload = payload;
 
   // send to the queue
-  rxQueue->push(&l2data);
+  auto message = newDataMessage(l2data);
+  rxQueue->push(&message);
 }
 
 void AccessPoint::transmit() {
-  auto layer2Data = txQueue->poll();
-  if (layer2Data == nullptr)
-    return;
+  auto message = txQueue->poll();
+  if (message == nullptr || message->type == CONTROL_MESSAGE)
+    goto end;
 
   // TODO send over 802.11
 
-  // Freeing data that will be alocated at LoRa reception
-  free(layer2Data->payload);
-  free(layer2Data);
+  // Freeing data that was alocated at LoRa reception
+  free(message->data.layer2.payload);
+end:
+  free(message);
 }
 
 #endif

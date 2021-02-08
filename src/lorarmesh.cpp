@@ -11,22 +11,24 @@ static void task(void* pointer) {
   }
 }
 
-LoraMesh::LoraMesh(DataQueue<layer2_data_t>* txQueue,
-                   DataQueue<layer2_data_t>* rxQueue) {
+LoraMesh::LoraMesh(DataQueue<message_t>* txQueue,
+                   DataQueue<message_t>* rxQueue) {
   this->txQueue = txQueue;
   this->rxQueue = rxQueue;
   xTaskCreatePinnedToCore(task, "LoraMesh", 10000, this, 0, &taskHandle, 0);
 }
 
 void LoraMesh::transmit() {
-  auto layer2Data = txQueue->poll();
-  if (layer2Data == nullptr)
+  auto message = txQueue->poll();
+  if (message == nullptr)
     return;
 
-  // send over LoRaLayer2
+  // send over LoRaLayer2... if control, then broadcasts. else lookup table
 
-  free(layer2Data->payload);
-  free(layer2Data);
+  if (message->type == DATA_MESSAGE) {
+    free(message->data.layer2.payload);
+  }
+  free(message);
 }
 
 void LoraMesh::receive() {}

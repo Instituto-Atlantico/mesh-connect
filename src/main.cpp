@@ -18,20 +18,21 @@
 #define GATEWAY_SSID "MeshConnectGWAP"
 
 Display* display;
-DataQueue<layer2_data_t>* wifiToLoraQueue;
-DataQueue<layer2_data_t>* loraToWifiQueue;
+DataQueue<message_t>* wifiToLoraQueue;
+DataQueue<message_t>* loraToWifiQueue;
 WifiNode* wifi;
 LoraMesh* mesh;
 
 void setup() {
   Serial.begin(115200);
   pinMode(BLUE_LED, OUTPUT);
+  digitalWrite(BLUE_LED, HIGH);
 
   display = new Display(OLED_SDA, OLED_SCL, OLED_RST, OLED_SCREEN_WIDTH,
                         OLED_SCREEN_HEIGHT);
 
-  wifiToLoraQueue = new DataQueue<layer2_data_t>(DATA_QUEUE_LENGTH);
-  loraToWifiQueue = new DataQueue<layer2_data_t>(DATA_QUEUE_LENGTH);
+  wifiToLoraQueue = new DataQueue<message_t>(DATA_QUEUE_LENGTH);
+  loraToWifiQueue = new DataQueue<message_t>(DATA_QUEUE_LENGTH);
 
   mesh = new LoraMesh(wifiToLoraQueue, loraToWifiQueue);
 
@@ -40,6 +41,8 @@ void setup() {
   } else {
     wifi = new AccessPoint(ACCESS_POINT_SSID, wifiToLoraQueue, loraToWifiQueue);
   }
+
+  digitalWrite(BLUE_LED, LOW);
 }
 
 void loop() {

@@ -5,6 +5,9 @@
 #include <WiFi.h>
 #include <esp_wifi.h>
 
+#define MAX_CONNECT_RETRIES 10
+#define CONNECT_DELAY_MILLS 500
+
 bool shouldEnableGateway(const char* gwSSID, int scanAttempts) {
   for (int i = 0; i < scanAttempts; i++) {
     auto count = WiFi.scanNetworks(false, true, false);
@@ -23,14 +26,19 @@ bool shouldEnableGateway(const char* gwSSID, int scanAttempts) {
 }
 
 Gateway::Gateway(const char* gwSSID,
-                 DataQueue<layer2_data_t>* rxQueue,
-                 DataQueue<layer2_data_t>* txQueue) {
+                 DataQueue<message_t>* rxQueue,
+                 DataQueue<message_t>* txQueue) {
   this->rxQueue = rxQueue;
   this->txQueue = txQueue;
 
+  int attempts = MAX_CONNECT_RETRIES;
+
   WiFi.begin(gwSSID, nullptr);
-  while (WiFi.status() != WL_CONNECTED)
-    ;
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(CONNECT_DELAY_MILLS);
+    if (attempts-- == 0)
+      ESP.restart();
+  }
 
   WiFi.setAutoReconnect(true);
 }

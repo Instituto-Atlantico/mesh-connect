@@ -3,16 +3,16 @@
 
 #include <dataqueue.h>
 #include <layer2.h>
+#include "message.h"
 
 class LoraMesh {
  private:
   TaskHandle_t taskHandle;
-  DataQueue<layer2_data_t>* txQueue;
-  DataQueue<layer2_data_t>* rxQueue;
+  DataQueue<message_t>* txQueue;
+  DataQueue<message_t>* rxQueue;
 
  public:
-  LoraMesh(DataQueue<layer2_data_t>* txQueue,
-           DataQueue<layer2_data_t>* rxQueue);
+  LoraMesh(DataQueue<message_t>* txQueue, DataQueue<message_t>* rxQueue);
 
   void transmit();
   void receive();
