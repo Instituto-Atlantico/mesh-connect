@@ -4,6 +4,8 @@
 #include <WiFi.h>
 #include <inttypes.h>
 
+#define WIFI_TASKS_CORE 1
+
 typedef struct {
   uint32_t rxFrames;
   uint16_t rxErrors;

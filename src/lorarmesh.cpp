@@ -12,7 +12,8 @@ LoraMesh::LoraMesh(DataQueue<message_t>* txQueue,
                    DataQueue<message_t>* rxQueue) {
   this->txQueue = txQueue;
   this->rxQueue = rxQueue;
-  xTaskCreatePinnedToCore(task, "LoraMesh", 10000, this, 0, &taskHandle, 0);
+  xTaskCreatePinnedToCore(task, "LoraMesh", 10000, this, 0, &taskHandle,
+                          LORA_TASKS_CORE);
 }
 
 void LoraMesh::transmit() {

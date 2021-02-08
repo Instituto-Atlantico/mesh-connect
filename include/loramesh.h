@@ -5,6 +5,8 @@
 #include <layer2.h>
 #include "message.h"
 
+#define LORA_TASKS_CORE 0
+
 class LoraMesh {
  private:
   TaskHandle_t taskHandle;

@@ -4,6 +4,8 @@
 
 #define MAX_CONNECT_RETRIES 10
 #define CONNECT_DELAY_MILLS 500
+#define GW_ANNOUNCE_INTERVAL 5000
+#define GW_ADDRESS (uint32_t)(ESP.getEfuseMac() & 0xFFFFFFFF)
 
 bool shouldEnableGateway(const char* gwSSID, int scanAttempts) {
   for (int i = 0; i < scanAttempts; i++) {
@@ -13,13 +15,20 @@ bool shouldEnableGateway(const char* gwSSID, int scanAttempts) {
 
     for (int i = 0; i < count; i++) {
       auto foundSSID = WiFi.SSID(i);
-      if (foundSSID.equals(gwSSID)) {
+      if (foundSSID.equals(gwSSID))
         return WiFi.encryptionType(i) == WIFI_AUTH_OPEN;
-      }
     }
   }
 
   return false;
+}
+
+static void announceTask(void* gwPointer) {
+  auto gw = (Gateway*)gwPointer;
+  for (;;) {
+    vTaskDelay(pdMS_TO_TICKS(GW_ANNOUNCE_INTERVAL));
+    gw->announce();
+  }
 }
 
 Gateway::Gateway(const char* gwSSID,
@@ -37,6 +46,9 @@ Gateway::Gateway(const char* gwSSID,
       ESP.restart();
   }
 
+  xTaskCreatePinnedToCore(announceTask, "GWAnnouncer", 10000, this, 0,
+                          &announceTaskHandle, WIFI_TASKS_CORE);
+
   WiFi.setAutoReconnect(true);
 }
 
@@ -47,4 +59,9 @@ wifi_node_status_t Gateway::getStatus() {
   status.rssi = result == ESP_OK ? wifidata.rssi : 0;
 
   return WifiNode::getStatus();
+}
+
+void Gateway::announce() {
+  auto message = newControlMessage(GW_ANNOUNCEMENT, GW_ADDRESS);
+  rxQueue->push(&message);
 }
