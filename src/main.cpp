@@ -34,7 +34,7 @@ void setup() {
   wifiToLoraQueue = new DataQueue<message_t>(DATA_QUEUE_LENGTH);
   loraToWifiQueue = new DataQueue<message_t>(DATA_QUEUE_LENGTH);
 
-  mesh = new LoraMesh(wifiToLoraQueue, loraToWifiQueue);
+  mesh = new LoraMesh(wifiToLoraQueue, loraToWifiQueue, new Router());
 
   if (shouldEnableGateway(GATEWAY_SSID)) {
     wifi = new Gateway(GATEWAY_SSID, wifiToLoraQueue, loraToWifiQueue);
