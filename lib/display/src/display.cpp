@@ -1,6 +1,3 @@
-#ifndef _DISPLAY_CPP_
-#define _DISPLAY_CPP_
-
 #include <Wire.h>
 #include <display.h>
 
@@ -20,5 +17,3 @@ Display::Display(int sda, int scl, int rst, int width, int height)
   setTextSize(1);
   display();
 }
-
-#endif

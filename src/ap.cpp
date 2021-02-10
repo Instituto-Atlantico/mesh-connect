@@ -1,9 +1,4 @@
-#ifndef _AP_CPP_
-#define _AP_CPP_
-
-#include <ap.h>
-#include <layer2.h>
-#include <layer3.h>
+#include "ap.h"
 #include <metrics.h>
 
 #define MAX_CLIENTS 4
@@ -28,13 +23,12 @@ static void transmitTask(void* pointer) {
 }
 
 AccessPoint::AccessPoint(const char* ssid,
-                         DataQueue<layer2_data_t>* rxQueue,
-                         DataQueue<layer2_data_t>* txQueue) {
+                         DataQueue<message_t>* rxQueue,
+                         DataQueue<message_t>* txQueue) {
   if (apInstance != nullptr)
     throw "Cannot have multiple AccessPoint instances";
   apInstance = this;
 
-  memset(&status, 0, sizeof(ap_status_t));
   this->rxQueue = rxQueue;
   this->txQueue = txQueue;
 
@@ -42,25 +36,13 @@ AccessPoint::AccessPoint(const char* ssid,
     throw "Cannot start AP";
 
   xTaskCreatePinnedToCore(transmitTask, "WiFiTransmitter", 10000, this, 0,
-                          &taskHandle, 1);
+                          &transmitTaskHandle, WIFI_TASKS_CORE);
 
   ESP_ERROR_CHECK(esp_wifi_set_promiscuous_filter(&promiscuousFilter));
   ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(&receiveCallback));
   ESP_ERROR_CHECK(esp_wifi_set_promiscuous(true));
   ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
   ESP_ERROR_CHECK(esp_wifi_set_max_tx_power(MAX_TX_POWER));
-}
-
-IPAddress AccessPoint::getIPAddress() {
-  return WiFi.softAPIP();
-}
-
-uint8_t AccessPoint::getNumberOfClients() {
-  return WiFi.softAPgetStationNum();
-}
-
-ap_status_t AccessPoint::getStatus() {
-  return this->status;
 }
 
 void AccessPoint::receive(wifi_promiscuous_pkt_t* packet) {
@@ -89,19 +71,19 @@ void AccessPoint::receive(wifi_promiscuous_pkt_t* packet) {
   l2data.payload = payload;
 
   // send to the queue
-  rxQueue->push(&l2data);
+  auto message = newDataMessage(l2data);
+  rxQueue->push(&message);
 }
 
 void AccessPoint::transmit() {
-  auto layer2Data = txQueue->poll();
-  if (layer2Data == nullptr)
-    return;
+  auto message = txQueue->poll();
+  if (message == nullptr || message->type == CONTROL_MESSAGE)
+    goto end;
 
   // TODO send over 802.11
 
-  // Freeing data that will be alocated at LoRa reception
-  free(layer2Data->payload);
-  free(layer2Data);
+  // Freeing data that was alocated at LoRa reception
+  free(message->data.layer2.payload);
+end:
+  free(message);
 }
-
-#endif
