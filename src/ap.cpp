@@ -36,7 +36,7 @@ AccessPoint::AccessPoint(const char* ssid,
     throw "Cannot start AP";
 
   xTaskCreatePinnedToCore(transmitTask, "WiFiTransmitter", 10000, this, 0,
-                          &taskHandle, WIFI_TASKS_CORE);
+                          &transmitTaskHandle, WIFI_TASKS_CORE);
 
   ESP_ERROR_CHECK(esp_wifi_set_promiscuous_filter(&promiscuousFilter));
   ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(&receiveCallback));

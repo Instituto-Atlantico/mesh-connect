@@ -10,7 +10,7 @@
 
 class AccessPoint : public WifiNode {
  private:
-  TaskHandle_t taskHandle;
+  TaskHandle_t transmitTaskHandle;
   DataQueue<message_t>* rxQueue;
   DataQueue<message_t>* txQueue;
 
