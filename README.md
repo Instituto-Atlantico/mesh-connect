@@ -8,6 +8,14 @@ Each ESP32 that joins the Mesh Connect network topology may assume one of two ro
 
 ![Topology Overview](docs/topology.png)
 
-## Main Workflow
+### How do devices become nodes or gateways?
+When the device starts, it scans the WiFi SSIDs available in its range. If there is a network named as *MeshConnectGWAP* with no authentication required, it will automatically try to become a WiFi client of such network, thus becoming a Gateway. Otherwise it will become a node and establish communication with peering nodes through the LoRa mesh network.
+
+## Main workflow
 In order to forward TCP/IP traffic over the LoRa mesh network, Nodes and Gateway have a common set of operations they need to perform in order to establish proper communication. Here follows the main workflow of each node/gateway in the topology:
 ![Main Workflow](docs/packet_seq_diag.png)
+
+## Supported hardware
+This project is being developed on:
+- TTGO LoRa32-OLED V1
+- TTGO T-Beam v1.0 ESP32 LoRa WiFi GPS NEO-6M
