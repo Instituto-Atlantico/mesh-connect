@@ -2,6 +2,7 @@
 #include <Layer1_LoRa.h>
 #include <LoRaLayer2.h>
 
+#undef LL2_DEBUG
 
 #define LORA_CS 18
 #define LORA_RST 14
@@ -60,34 +61,26 @@ void loop()
   numEnvios++;
   Serial.print("Envio numero #");
   Serial.println(numEnvios);
-  memcpy(datagram.destination, RECEIVER,ADDR_LENGTH);  // copia o conteudo receiver para datagram.destination no tamanho addr
+  memcpy(datagram.destination, RECEIVER,ADDR_LENGTH); 
   datagram.type = 's';  // can be anything, but 's' for 'sensor'
-  for (int i = 1; i <= 224; i*=2)
+  for (int i = 1; i <= 230; i+=2)
   {
-    int j;
-    /*if(i == 0) {
-      j = i+1;
-    }
-    else{
-      j = i;
-    }*/
-    j = i;
-    char datapayload[j];
+    
+     msgLength = i;
+    char datapayload[msgLength];
     memset(datapayload,'a',sizeof(datapayload));
     //msgLength = sprintf((char*)datagram.message, "%s", dataPayload);
-    strcpy((char*)datagram.message,datapayload);
-    msgLength = j;
-    //Serial.println(i);
+    strncpy((char*)datagram.message,datapayload, msgLength);
     datagramsize = msgLength + DATAGRAM_HEADER;
-     startTime = micros();
-    LL2->daemon();    
+    startTime = micros();
+    LL2->daemon(); 
+    endTime = micros();   
     LL2->writeData(datagram, datagramsize);
     endTime = micros();
     Serial.print("Tempo de envio de ");
     Serial.print(msgLength);
     Serial.print(" bytes: ");
-    Serial.println(endTime - startTime); //Insere o valor na nova posicao do vetor e guarda o valor da posicao*/
-    //free(dataPayload);
+    Serial.println(endTime - startTime); 
   }
   delay(5000);
 }
