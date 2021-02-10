@@ -14,8 +14,8 @@ LoraMesh::LoraMesh(DataQueue<message_t>* txQueue,
   this->txQueue = txQueue;
   this->rxQueue = rxQueue;
   this->router = router;
-  xTaskCreatePinnedToCore(task, "LoraMesh", 10000, this, 0, &taskHandle,
-                          LORA_TASKS_CORE);
+  xTaskCreatePinnedToCore(task, "LoraMeshTransceiver", 10000, this, 0,
+                          &transceiverTaskHandle, LORA_TASKS_CORE);
 }
 
 void LoraMesh::transmit() {
