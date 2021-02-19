@@ -6,12 +6,13 @@
 #define LORA_CS 18
 #define LORA_RST 14
 #define LORA_IRQ 26
-
 #define LORA_FREQ 915E6
 #define LED 25
 #define TX_POWER 20
+
 #define DATAGRAM_HEADER 5
-#undef LL2_DEBUG
+#define MESSAGE_LENGTH 233
+
 uint8_t BROADCAST_NODES[ADDR_LENGTH] = {0xff, 0xff, 0xff, 0xff};
 
 
@@ -37,11 +38,11 @@ LoraMesh::LoraMesh(DataQueue<message_t>* txQueue,
   if (Layer1->init()) 
   {
     LL2 = new LL2Class(Layer1);  // initialize Layer2
-    LL2->setLocalAddress("c0d3f00d");  // this should either be randomized or set using
+    //LL2->setLocalAddress("c0d3f00d");  //  MUST BE TREATED <----
                                 // the wifi mac address
     LL2->setInterval(10000);    // set to zero to disable routing packets
     if (LL2->init() != 0) {
-      //Tratar errp
+      // MUST BE TREATED <----
     } 
   }
   xTaskCreatePinnedToCore(task, "LoraMesh", 10000, this, 0, &taskHandle,
@@ -63,6 +64,7 @@ void LoraMesh::transmit() {
     memcpy(datagram.message, &message->data.control, sizeof(control_data_t));
     datagramsize = DATAGRAM_HEADER;  
     datagramsize += sizeof(control_data_t); 
+    
     LL2->daemon(); 
     LL2->writeData(datagram, datagramsize);
     // TODO broadcast message over LoRaLayer2
@@ -76,9 +78,9 @@ void LoraMesh::transmit() {
       memcpy(datagram.message, message->data.layer2.payload, message->data.layer2.length);
       datagramsize = DATAGRAM_HEADER;  
       datagramsize += message->data.layer2.length;
+      
       LL2->daemon(); 
       LL2->writeData(datagram, datagramsize);
-  
       // TODO send to destinationAddr through LoRaLayer2
     }
     
@@ -91,12 +93,30 @@ void LoraMesh::transmit() {
 }
 
 void LoraMesh::receive() {
-  //message_t* message = nullptr;  // TODO read actual data from LoRaLayer2
-  auto message = rxQueue->poll();
-  if (message == nullptr)
+  message_t* message = nullptr;  
+  // TODO read actual data from LoRaLayer2
+  
+  //auto message = rxQueue->poll();
+  LL2->daemon(); 
+  struct Packet packet = LL2->readData();
+
+  if (packet.datagram.message == nullptr)
     return;
   
-  if (message->type == CONTROL_MESSAGE) {
+  if (packet.datagram.type == CONTROL_MESSAGE) {
+    memcpy(message, packet.datagram.message, MESSAGE_LENGTH);
     router->handleControlMessage(message);
-  }
+
+  }else if (packet.datagram.type == DATA_MESSAGE) {
+    auto destinationAddr = router->getGatewayAddress();
+    if (packet.datagram.destination == destinationAddr)
+    {
+      LL2->getRoutingTable(routes);
+      LL2->getNeighborTable(neighbors);
+      //Send to the queue
+    }else{
+
+    }
+    
+  }  
 }

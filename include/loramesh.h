@@ -18,6 +18,8 @@ class LoraMesh {
   Router* router;
   Layer1Class* Layer1;
   LL2Class* LL2;
+  char routes[256];
+  char neighbors[256];
 
  public:
   LoraMesh(DataQueue<message_t>* txQueue,
