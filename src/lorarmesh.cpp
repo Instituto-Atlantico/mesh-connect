@@ -13,8 +13,7 @@
 #define DATAGRAM_HEADER 5
 #define MESSAGE_LENGTH 233
 
-uint8_t BROADCAST_NODES[ADDR_LENGTH] = {0xff, 0xff, 0xff, 0xff};
-
+const int BROADCAST_NODES[ADDR_LENGTH] = {0xff, 0xff, 0xff, 0xff};
 
 static void task(void* pointer) {
   auto loraMesh = (LoraMesh*)pointer;
@@ -35,16 +34,20 @@ LoraMesh::LoraMesh(DataQueue<message_t>* txQueue,
   Layer1->setPins(LORA_CS, LORA_RST, LORA_IRQ);
   Layer1->setTxPower(TX_POWER);
   Layer1->setLoRaFrequency(LORA_FREQ);
-  if (Layer1->init()) 
+  int newTry = 0;
+  while (!Layer1->init() or newTry < 30) 
   {
-    LL2 = new LL2Class(Layer1);  // initialize Layer2
-    //LL2->setLocalAddress("c0d3f00d");  //  MUST BE TREATED <----
-                                // the wifi mac address
-    LL2->setInterval(10000);    // set to zero to disable routing packets
-    if (LL2->init() != 0) {
-      // MUST BE TREATED <----
-    } 
+    newTry++;
   }
+  if (newTry < 30){
+    LL2 = new LL2Class(Layer1);  
+    LL2->setInterval(10000); // set to zero to disable routing packets
+    LL2->init();
+  }else{
+    delay(500);
+    ESP.restart();
+  }
+  
   xTaskCreatePinnedToCore(task, "LoraMesh", 10000, this, 0, &taskHandle,
                           LORA_TASKS_CORE);
   
@@ -55,7 +58,8 @@ void LoraMesh::transmit() {
 
   if (message == nullptr)
     return;
- 
+  
+  LL2->daemon(); 
   if (message->type == CONTROL_MESSAGE) {
     int datagramsize = 0;
     struct Datagram datagram;
@@ -65,10 +69,8 @@ void LoraMesh::transmit() {
     datagramsize = DATAGRAM_HEADER;  
     datagramsize += sizeof(control_data_t); 
     
-    LL2->daemon(); 
     LL2->writeData(datagram, datagramsize);
-    // TODO broadcast message over LoRaLayer2
-  } else if (message->type == DATA_MESSAGE) {
+    }else if (message->type == DATA_MESSAGE) {
     auto destinationAddr = router->getGatewayAddress();
     if (destinationAddr > 0){
       int datagramsize = 0;
@@ -79,9 +81,7 @@ void LoraMesh::transmit() {
       datagramsize = DATAGRAM_HEADER;  
       datagramsize += message->data.layer2.length;
       
-      LL2->daemon(); 
       LL2->writeData(datagram, datagramsize);
-      // TODO send to destinationAddr through LoRaLayer2
     }
     
   }
@@ -95,28 +95,5 @@ void LoraMesh::transmit() {
 void LoraMesh::receive() {
   message_t* message = nullptr;  
   // TODO read actual data from LoRaLayer2
-  
-  //auto message = rxQueue->poll();
-  LL2->daemon(); 
-  struct Packet packet = LL2->readData();
 
-  if (packet.datagram.message == nullptr)
-    return;
-  
-  if (packet.datagram.type == CONTROL_MESSAGE) {
-    memcpy(message, packet.datagram.message, MESSAGE_LENGTH);
-    router->handleControlMessage(message);
-
-  }else if (packet.datagram.type == DATA_MESSAGE) {
-    auto destinationAddr = router->getGatewayAddress();
-    if (packet.datagram.destination == destinationAddr)
-    {
-      LL2->getRoutingTable(routes);
-      LL2->getNeighborTable(neighbors);
-      //Send to the queue
-    }else{
-
-    }
-    
-  }  
 }
