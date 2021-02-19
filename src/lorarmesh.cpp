@@ -36,13 +36,12 @@ LoraMesh::LoraMesh(DataQueue<message_t>* txQueue,
   Layer1->setLoRaFrequency(LORA_FREQ);
   if (Layer1->init()) 
   {
-    Serial.println(" --> Layer1 initialized");
     LL2 = new LL2Class(Layer1);  // initialize Layer2
     LL2->setLocalAddress("c0d3f00d");  // this should either be randomized or set using
                                 // the wifi mac address
     LL2->setInterval(10000);    // set to zero to disable routing packets
     if (LL2->init() != 0) {
-      ESP.restart();
+      //Tratar errp
     } 
   }
   xTaskCreatePinnedToCore(task, "LoraMesh", 10000, this, 0, &taskHandle,
