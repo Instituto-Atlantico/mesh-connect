@@ -60,36 +60,38 @@ void LoraMesh::transmit() {
     return;
   
   LL2->daemon(); 
+  int datagramsize = 0;
+  struct Datagram datagram;
   if (message->type == CONTROL_MESSAGE) {
-    int datagramsize = 0;
-    struct Datagram datagram;
     memcpy(datagram.destination, BROADCAST_NODES, ADDR_LENGTH); 
     datagram.type = message->type;
     memcpy(datagram.message, &message->data.control, sizeof(control_data_t));
     datagramsize = DATAGRAM_HEADER;  
     datagramsize += sizeof(control_data_t); 
     
-    LL2->writeData(datagram, datagramsize);
-    }else if (message->type == DATA_MESSAGE) {
+  }else if (message->type == DATA_MESSAGE) {
     auto destinationAddr = router->getGatewayAddress();
     if (destinationAddr > 0){
-      int datagramsize = 0;
-      struct Datagram datagram;
       datagram.type = message->type;
       memcpy(datagram.destination, &destinationAddr, ADDR_LENGTH); 
       memcpy(datagram.message, message->data.layer2.payload, message->data.layer2.length);
       datagramsize = DATAGRAM_HEADER;  
       datagramsize += message->data.layer2.length;
       
-      LL2->writeData(datagram, datagramsize);
+    }else{
+      goto freeData;
     }
     
   }
-  
-  if (message->type == DATA_MESSAGE) {
-    free(message->data.layer2.payload);
-  }
-  free(message);
+
+  LL2->writeData(datagram, datagramsize);
+
+
+  freeData:
+    if (message->type == DATA_MESSAGE) {
+      free(message->data.layer2.payload);
+    }
+    free(message);
 }
 
 void LoraMesh::receive() {
