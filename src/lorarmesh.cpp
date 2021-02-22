@@ -12,8 +12,10 @@
 
 #define DATAGRAM_HEADER 5
 #define MESSAGE_LENGTH 233
+#define CONNECT_DELAY_MILLS 500
+#define MAX_CONNECT_RETRIES 10
 
-const int BROADCAST_NODES[ADDR_LENGTH] = {0xff, 0xff, 0xff, 0xff};
+static int BROADCAST_NODES[ADDR_LENGTH] = {0xff, 0xff, 0xff, 0xff};
 
 static void task(void* pointer) {
   auto loraMesh = (LoraMesh*)pointer;
@@ -34,18 +36,17 @@ LoraMesh::LoraMesh(DataQueue<message_t>* txQueue,
   Layer1->setPins(LORA_CS, LORA_RST, LORA_IRQ);
   Layer1->setTxPower(TX_POWER);
   Layer1->setLoRaFrequency(LORA_FREQ);
-  int newTry = 0;
-  while (!Layer1->init() or newTry < 30) {
-    newTry++;
+
+  int attempts = MAX_CONNECT_RETRIES;
+
+  while (!Layer1->init()) {
+    delay(CONNECT_DELAY_MILLS);
+    if (attempts-- == 0)
+      ESP.restart();
   }
-  if (newTry < 30) {
-    LL2 = new LL2Class(Layer1);
-    LL2->setInterval(10000);  // set to zero to disable routing packets
-    LL2->init();
-  } else {
-    delay(500);
-    ESP.restart();
-  }
+  LL2 = new LL2Class(Layer1);
+  LL2->setInterval(10000);  // set to zero to disable routing packets
+  LL2->init();
 
   xTaskCreatePinnedToCore(task, "LoraMeshTransceiver", 10000, this, 0,
                           &transceiverTaskHandle, LORA_TASKS_CORE);
@@ -92,6 +93,11 @@ freeData:
 }
 
 void LoraMesh::receive() {
-  message_t* message = nullptr;
-  // TODO read actual data from LoRaLayer2
+  message_t* message = nullptr;  // TODO read actual data from LoRaLayer2
+  if (message == nullptr)
+    return;
+
+  if (message->type == CONTROL_MESSAGE) {
+    router->handleControlMessage(message);
+  }
 }
