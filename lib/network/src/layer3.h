@@ -15,8 +15,8 @@ typedef struct {
   uint8_t ttl : 8;
   uint8_t protocol : 8;
   uint16_t checksum : 16;
-  uint8_t source[4];
-  uint8_t destination[4];
+  uint32_t sourceIP;
+  uint32_t destinationIP;
 } ipv4_headers_t;  // 20 bytes
 #define IPV4_HEADERS_LEN sizeof(ipv4_headers_t)
 

@@ -48,8 +48,8 @@ LoraMesh::LoraMesh(DataQueue<message_t>* txQueue,
     ESP.restart();
   }
   
-  xTaskCreatePinnedToCore(task, "LoraMesh", 10000, this, 0, &taskHandle,
-                          LORA_TASKS_CORE);
+  xTaskCreatePinnedToCore(task, "LoraMeshTransceiver", 10000, this, 0,
+                          &transceiverTaskHandle, LORA_TASKS_CORE);
   
 }
 

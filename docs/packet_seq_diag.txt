@@ -1,0 +1,23 @@
+title MeshConnect main workflow
+
+User->Node: WiFi client association
+note right of User: No password required
+Gateway->+Node: Broadcast GW control message to all nodes
+Node->-Node: Store GW addresses in a routing table
+note left of Gateway: GW announcements happen every 5 seconds
+User->+Node: Send 802.11 network Layer 2 frame
+Node->Node: Extract Layer 3 packet
+Node->Node: Determine the closest MeshConnect gateway
+Node->+Gateway: Send the Layer 3 packet over the LoRa mesh
+Node-->-User: Acknowledge 802.11 network traffic
+Gateway->Gateway: Store source addres, destination IP and port in a table
+Gateway->Gateway: Manipulate IP packet headers for proxying
+Gateway->-Internet: Send to the Internet
+note left of Internet: After a while...
+Internet->+Gateway: Receive traffic from Internet
+Gateway->Gateway: Check if source IP and port match some table entry
+Gateway->Gateway: Manipulate IP packet headers for proxying
+Gateway->-Node: Send the Layer 3 packet over the LoRa mesh
+Node->Node: Determine to which client station the packet is destined to
+Node->Node: Encapsulate packet in a 802.11 frame
+Node->-User: Send the 802.11 frame

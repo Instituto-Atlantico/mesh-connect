@@ -12,7 +12,7 @@
 
 class LoraMesh {
  private:
-  TaskHandle_t taskHandle;
+  TaskHandle_t transceiverTaskHandle;
   DataQueue<message_t>* txQueue;
   DataQueue<message_t>* rxQueue;
   Router* router;
