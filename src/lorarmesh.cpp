@@ -95,7 +95,25 @@ void LoraMesh::transmit() {
 }
 
 void LoraMesh::receive() {
-  message_t* message = nullptr;  
+ message_t* message = nullptr;  
   // TODO read actual data from LoRaLayer2
+  
+  //auto message = rxQueue->poll();
+  LL2->daemon(); 
+  struct Packet packet = LL2->readData();
+
+  if (packet.datagram.message == nullptr)
+    return;
+  
+  if (packet.datagram.type == CONTROL_MESSAGE) {
+    memcpy(message, packet.datagram.message, MESSAGE_LENGTH);
+    router->handleControlMessage(message);
+
+  }else if (packet.datagram.type == DATA_MESSAGE) { // if the device is the gateway 
+    auto destinationAddr = router->getGatewayAddress();
+    //Send to the queue
+    memcpy(message, packet.datagram.message, MESSAGE_LENGTH);
+    rxQueue->push(message); 
+  }
 
 }
