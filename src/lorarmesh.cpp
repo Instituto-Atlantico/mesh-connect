@@ -1,6 +1,6 @@
-#include "loramesh.h"
 #include <Layer1_LoRa.h>
 #include <LoRaLayer2.h>
+#include "loramesh.h"
 
 #define ADDR_LENGTH 4
 #define LORA_CS 18
@@ -29,21 +29,20 @@ LoraMesh::LoraMesh(DataQueue<message_t>* txQueue,
   this->txQueue = txQueue;
   this->rxQueue = rxQueue;
   this->router = router;
-  
+
   Layer1 = new Layer1Class();
   Layer1->setPins(LORA_CS, LORA_RST, LORA_IRQ);
   Layer1->setTxPower(TX_POWER);
   Layer1->setLoRaFrequency(LORA_FREQ);
   int newTry = 0;
-  while (!Layer1->init() or newTry < 30) 
-  {
+  while (!Layer1->init() or newTry < 30) {
     newTry++;
   }
-  if (newTry < 30){
-    LL2 = new LL2Class(Layer1);  
-    LL2->setInterval(10000); // set to zero to disable routing packets
+  if (newTry < 30) {
+    LL2 = new LL2Class(Layer1);
+    LL2->setInterval(10000);  // set to zero to disable routing packets
     LL2->init();
-  }else{
+  } else {
     delay(500);
     ESP.restart();
   }
@@ -58,44 +57,42 @@ void LoraMesh::transmit() {
 
   if (message == nullptr)
     return;
-  
-  LL2->daemon(); 
+
+  LL2->daemon();
   int datagramsize = 0;
   struct Datagram datagram;
   if (message->type == CONTROL_MESSAGE) {
-    memcpy(datagram.destination, BROADCAST_NODES, ADDR_LENGTH); 
+    memcpy(datagram.destination, BROADCAST_NODES, ADDR_LENGTH);
     datagram.type = message->type;
     memcpy(datagram.message, &message->data.control, sizeof(control_data_t));
-    datagramsize = DATAGRAM_HEADER;  
-    datagramsize += sizeof(control_data_t); 
-    
-  }else if (message->type == DATA_MESSAGE) {
+    datagramsize = DATAGRAM_HEADER;
+    datagramsize += sizeof(control_data_t);
+
+  } else if (message->type == DATA_MESSAGE) {
     auto destinationAddr = router->getGatewayAddress();
-    if (destinationAddr > 0){
+    if (destinationAddr > 0) {
       datagram.type = message->type;
-      memcpy(datagram.destination, &destinationAddr, ADDR_LENGTH); 
-      memcpy(datagram.message, message->data.layer2.payload, message->data.layer2.length);
-      datagramsize = DATAGRAM_HEADER;  
+      memcpy(datagram.destination, &destinationAddr, ADDR_LENGTH);
+      memcpy(datagram.message, message->data.layer2.payload,
+             message->data.layer2.length);
+      datagramsize = DATAGRAM_HEADER;
       datagramsize += message->data.layer2.length;
-      
-    }else{
+
+    } else {
       goto freeData;
     }
-    
   }
 
   LL2->writeData(datagram, datagramsize);
 
-
-  freeData:
-    if (message->type == DATA_MESSAGE) {
-      free(message->data.layer2.payload);
-    }
-    free(message);
+freeData:
+  if (message->type == DATA_MESSAGE) {
+    free(message->data.layer2.payload);
+  }
+  free(message);
 }
 
 void LoraMesh::receive() {
-  message_t* message = nullptr;  
+  message_t* message = nullptr;
   // TODO read actual data from LoRaLayer2
-
 }
