@@ -16,8 +16,8 @@ class LoraMesh {
   DataQueue<message_t>* txQueue;
   DataQueue<message_t>* rxQueue;
   Router* router;
-  Layer1Class* Layer1;
-  LL2Class* LL2;
+  Layer1Class* layer1;
+  LL2Class* ll2;
 
  public:
   LoraMesh(DataQueue<message_t>* txQueue,
