@@ -7,13 +7,12 @@
 #define LORA_RST 14
 #define LORA_IRQ 26
 #define LORA_FREQ 915E6
-#define LED 25
 #define TX_POWER 20
 
 #define DATAGRAM_HEADER 5
-#define MESSAGE_LENGTH 233
-#define CONNECT_DELAY_MILLS 500
-#define MAX_CONNECT_RETRIES 10
+
+#define BOOT_LL1_DELAY_MICROS 500
+#define MAX_BOOT_LL1_RETRIES 10
 
 static int BROADCAST_NODES[ADDR_LENGTH] = {0xff, 0xff, 0xff, 0xff};
 
@@ -37,10 +36,10 @@ LoraMesh::LoraMesh(DataQueue<message_t>* txQueue,
   Layer1->setTxPower(TX_POWER);
   Layer1->setLoRaFrequency(LORA_FREQ);
 
-  int attempts = MAX_CONNECT_RETRIES;
+  int attempts = MAX_BOOT_LL1_RETRIES;
 
   while (!Layer1->init()) {
-    delay(CONNECT_DELAY_MILLS);
+    delay(BOOT_LL1_DELAY_MICROS);
     if (attempts-- == 0)
       ESP.restart();
   }
@@ -59,36 +58,39 @@ void LoraMesh::transmit() {
     return;
 
   LL2->daemon();
-  int datagramsize = 0;
   struct Datagram datagram;
+  int datagramsize = DATAGRAM_HEADER;
+  datagram.type = message->type;
+  bool checkTransmitMessage = false;
+  
   if (message->type == CONTROL_MESSAGE) {
+    
     memcpy(datagram.destination, BROADCAST_NODES, ADDR_LENGTH);
-    datagram.type = message->type;
     memcpy(datagram.message, &message->data.control, sizeof(control_data_t));
-    datagramsize = DATAGRAM_HEADER;
     datagramsize += sizeof(control_data_t);
+    checkTransmitMessage = true;
 
   } else if (message->type == DATA_MESSAGE) {
+    
     auto destinationAddr = router->getGatewayAddress();
     if (destinationAddr > 0) {
-      datagram.type = message->type;
       memcpy(datagram.destination, &destinationAddr, ADDR_LENGTH);
       memcpy(datagram.message, message->data.layer2.payload,
-             message->data.layer2.length);
-      datagramsize = DATAGRAM_HEADER;
+             message->data.layer2.length);    
       datagramsize += message->data.layer2.length;
-
-    } else {
-      goto freeData;
-    }
+      checkTransmitMessage = true;
+    } 
   }
-
-  LL2->writeData(datagram, datagramsize);
-
-freeData:
+  
+  if (checkTransmitMessage)
+  {
+    LL2->writeData(datagram, datagramsize);
+  }  
+  
   if (message->type == DATA_MESSAGE) {
     free(message->data.layer2.payload);
   }
+  
   free(message);
 }
 
