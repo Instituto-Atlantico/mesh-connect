@@ -44,7 +44,7 @@ LoraMesh::LoraMesh(DataQueue<message_t>* txQueue,
       ESP.restart();
   }
   LL2 = new LL2Class(Layer1);
-  LL2->setInterval(10000);  // set to zero to disable routing packets
+  LL2->setInterval(10000);  // this value needs more research
   LL2->init();
 
   xTaskCreatePinnedToCore(task, "LoraMeshTransceiver", 10000, this, 0,
@@ -62,35 +62,32 @@ void LoraMesh::transmit() {
   int datagramsize = DATAGRAM_HEADER;
   datagram.type = message->type;
   bool checkTransmitMessage = false;
-  
+
   if (message->type == CONTROL_MESSAGE) {
-    
     memcpy(datagram.destination, BROADCAST_NODES, ADDR_LENGTH);
     memcpy(datagram.message, &message->data.control, sizeof(control_data_t));
     datagramsize += sizeof(control_data_t);
     checkTransmitMessage = true;
 
   } else if (message->type == DATA_MESSAGE) {
-    
     auto destinationAddr = router->getGatewayAddress();
     if (destinationAddr > 0) {
       memcpy(datagram.destination, &destinationAddr, ADDR_LENGTH);
       memcpy(datagram.message, message->data.layer2.payload,
-             message->data.layer2.length);    
+             message->data.layer2.length);
       datagramsize += message->data.layer2.length;
       checkTransmitMessage = true;
-    } 
+    }
   }
-  
-  if (checkTransmitMessage)
-  {
+
+  if (checkTransmitMessage) {
     LL2->writeData(datagram, datagramsize);
-  }  
-  
+  }
+
   if (message->type == DATA_MESSAGE) {
     free(message->data.layer2.payload);
   }
-  
+
   free(message);
 }
 
