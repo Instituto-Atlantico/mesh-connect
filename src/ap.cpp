@@ -1,9 +1,10 @@
 #include "ap.h"
+#include <layer3.h>
 #include <metrics.h>
 
 #define MAX_CLIENTS 4
 #define MAX_TX_POWER 82
-#define DEFAULT_CHANNEL 13
+#define DEFAULT_CHANNEL 5
 
 AccessPoint* apInstance = nullptr;
 
@@ -58,8 +59,19 @@ void AccessPoint::receive(wifi_promiscuous_pkt_t* packet) {
 
   // get layer 2 data
   auto l2data = getLayer2Data(packet->payload, packet->rx_ctrl.sig_len);
-  if (l2data.length <= 0)
+  if (l2data.length <= 0 || l2data.type != ETHER_TYPE_IPV4)
     return;
+
+  auto ipv4 = (ipv4_headers_t*)l2data.payload;
+  if (ipv4->destinationIP == 0 || ipv4->destinationIP == getIPAddress()) {
+    return;
+  }
+
+  // drop frame if it's larger than MTU
+  if (l2data.length > WIFI_NODE_MTU) {
+    sendFragmentationNeeded(ipv4);
+    return;
+  }
 
   // alocating memory for the data to be read elsewhere
   void* payload = malloc(l2data.length);

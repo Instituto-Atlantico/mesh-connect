@@ -1,19 +1,21 @@
-#include "loramesh.h"
 #include <Layer1_LoRa.h>
 #include <LoRaLayer2.h>
+#include "loramesh.h"
 
 #define ADDR_LENGTH 4
 #define LORA_CS 18
 #define LORA_RST 14
 #define LORA_IRQ 26
 #define LORA_FREQ 915E6
-#define LED 25
 #define TX_POWER 20
 
 #define DATAGRAM_HEADER 5
-#define MESSAGE_LENGTH 233
+//#define MESSAGE_LENGTH 22
+#define BOOT_LL1_DELAY_MICROS 500
+#define MAX_BOOT_LL1_RETRIES 10
 
-const int BROADCAST_NODES[ADDR_LENGTH] = {0xff, 0xff, 0xff, 0xff};
+
+static int BROADCAST_NODES[ADDR_LENGTH] = {0xff, 0xff, 0xff, 0xff};
 
 static void task(void* pointer) {
   auto loraMesh = (LoraMesh*)pointer;
@@ -29,28 +31,27 @@ LoraMesh::LoraMesh(DataQueue<message_t>* txQueue,
   this->txQueue = txQueue;
   this->rxQueue = rxQueue;
   this->router = router;
-  
-  Layer1 = new Layer1Class();
-  Layer1->setPins(LORA_CS, LORA_RST, LORA_IRQ);
-  Layer1->setTxPower(TX_POWER);
-  Layer1->setLoRaFrequency(LORA_FREQ);
-  int newTry = 0;
-  while (!Layer1->init() or newTry < 30) 
-  {
-    newTry++;
+
+  layer1 = new Layer1Class();
+  layer1->setPins(LORA_CS, LORA_RST, LORA_IRQ);
+  layer1->setTxPower(TX_POWER);
+  layer1->setLoRaFrequency(LORA_FREQ);
+
+  int attempts = MAX_BOOT_LL1_RETRIES;
+
+  while (!layer1->init()) {
+    delay(BOOT_LL1_DELAY_MICROS);
+    if (attempts-- == 0)
+      //ESP.restart();
+      Serial.println("Failed");
+      delay(1000);
   }
-  if (newTry < 30){
-    LL2 = new LL2Class(Layer1);  
-    LL2->setInterval(10000); // set to zero to disable routing packets
-    LL2->init();
-  }else{
-    delay(500);
-    ESP.restart();
-  }
-  
-  xTaskCreatePinnedToCore(task, "LoraMesh", 10000, this, 0, &taskHandle,
-                          LORA_TASKS_CORE);
-  
+  ll2 = new LL2Class(layer1);
+  ll2->setInterval(10000);  // this value needs more research
+  ll2->init();
+
+  xTaskCreatePinnedToCore(task, "LoraMeshTransceiver", 10000, this, 0,
+                          &transceiverTaskHandle, LORA_TASKS_CORE);
 }
 
 void LoraMesh::transmit() {
@@ -58,62 +59,58 @@ void LoraMesh::transmit() {
 
   if (message == nullptr)
     return;
-  
-  LL2->daemon(); 
-  int datagramsize = 0;
+
+  ll2->daemon();
   struct Datagram datagram;
+  int datagramsize = DATAGRAM_HEADER;
+  datagram.type = message->type;
+  bool shouldTransmitt = false;
+
   if (message->type == CONTROL_MESSAGE) {
-    memcpy(datagram.destination, BROADCAST_NODES, ADDR_LENGTH); 
-    datagram.type = message->type;
+    memcpy(datagram.destination, BROADCAST_NODES, ADDR_LENGTH);
     memcpy(datagram.message, &message->data.control, sizeof(control_data_t));
-    datagramsize = DATAGRAM_HEADER;  
-    datagramsize += sizeof(control_data_t); 
-    
-  }else if (message->type == DATA_MESSAGE) {
+    datagramsize += sizeof(control_data_t);
+    shouldTransmitt = true;
+
+  } else if (message->type == DATA_MESSAGE) {
     auto destinationAddr = router->getGatewayAddress();
-    if (destinationAddr > 0){
-      datagram.type = message->type;
-      memcpy(datagram.destination, &destinationAddr, ADDR_LENGTH); 
-      memcpy(datagram.message, message->data.layer2.payload, message->data.layer2.length);
-      datagramsize = DATAGRAM_HEADER;  
+    if (destinationAddr > 0) {
+      memcpy(datagram.destination, &destinationAddr, ADDR_LENGTH);
+      memcpy(datagram.message, message->data.layer2.payload,
+             message->data.layer2.length);
       datagramsize += message->data.layer2.length;
-      
-    }else{
-      goto freeData;
+      shouldTransmitt = true;
     }
-    
   }
 
-  LL2->writeData(datagram, datagramsize);
+  if (shouldTransmitt) {
+    ll2->writeData(datagram, datagramsize);
+  }
 
+  if (message->type == DATA_MESSAGE) {
+    free(message->data.layer2.payload);
+  }
 
-  freeData:
-    if (message->type == DATA_MESSAGE) {
-      free(message->data.layer2.payload);
-    }
-    free(message);
+  free(message);
 }
-
 void LoraMesh::receive() {
- message_t* message = nullptr;  
+  message_t* message = nullptr;  
   // TODO read actual data from LoRaLayer2
   
-  //auto message = rxQueue->poll();
-  LL2->daemon(); 
-  struct Packet packet = LL2->readData();
+  ll2->daemon(); 
+  struct Packet packet = ll2->readData();
 
   if (packet.datagram.message == nullptr)
     return;
   
   if (packet.datagram.type == CONTROL_MESSAGE) {
-    memcpy(message, packet.datagram.message, MESSAGE_LENGTH);
     router->handleControlMessage(message);
+    memcpy(&message->data.control, packet.datagram.message, sizeof(control_data_t));
 
   }else if (packet.datagram.type == DATA_MESSAGE) { // if the device is the gateway 
-    auto destinationAddr = router->getGatewayAddress();
-    //Send to the queue
-    memcpy(message, packet.datagram.message, MESSAGE_LENGTH);
-    rxQueue->push(message); 
+    memcpy(message->data.layer2.payload, packet.datagram.message, MESSAGE_LENGTH);  
   }
 
+  //Send to the queue
+  rxQueue->push(message); 
 }

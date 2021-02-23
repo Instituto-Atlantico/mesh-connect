@@ -3,8 +3,10 @@
 
 #include <WiFi.h>
 #include <inttypes.h>
+#include <layer3.h>
 
 #define WIFI_TASKS_CORE 1
+#define WIFI_NODE_MTU 233
 
 typedef struct {
   uint32_t rxFrames;
@@ -27,6 +29,8 @@ class WifiNode {
   virtual wifi_node_status_t getStatus();
 
   virtual String getMode() = 0;
+
+  void sendFragmentationNeeded(ipv4_headers_t* sourcePacket);
 };
 
 #endif
