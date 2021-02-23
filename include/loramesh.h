@@ -1,6 +1,8 @@
 #ifndef _LORAMESH_H_
 #define _LORAMESH_H_
 
+#include <Layer1_LoRa.h>
+#include <LoRaLayer2.h>
 #include <dataqueue.h>
 #include <layer2.h>
 #include "message.h"
@@ -14,6 +16,8 @@ class LoraMesh {
   DataQueue<message_t>* txQueue;
   DataQueue<message_t>* rxQueue;
   Router* router;
+  Layer1Class* layer1;
+  LL2Class* ll2;
 
  public:
   LoraMesh(DataQueue<message_t>* txQueue,
