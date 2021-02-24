@@ -82,9 +82,10 @@ typedef struct {
   ether_type_t type;
   uint8_t source[6];
   uint8_t destination[6];
-  void* payload;
   uint16_t length;
+  void* payload;
 } layer2_data_t;
+#define LAYER2_DATA_HEADERS_LEN (sizeof(layer2_data_t) - sizeof(void*))
 
 layer2_data_t getLayer2Data(void* buffer, uint16_t length);
 

@@ -1,6 +1,7 @@
 #include <Layer1_LoRa.h>
 #include <LoRaLayer2.h>
 #include "loramesh.h"
+#include <wifinode.h>
 
 #define ADDR_LENGTH 4
 #define LORA_CS 18
@@ -73,9 +74,13 @@ void LoraMesh::transmit() {
     auto destinationAddr = router->getGatewayAddress();
     if (destinationAddr > 0) {
       memcpy(datagram.destination, &destinationAddr, ADDR_LENGTH);
-      memcpy(datagram.message, message->data.layer2.payload,
-             message->data.layer2.length);
-      datagramsize += message->data.layer2.length;
+      
+      memcpy(datagram.message, &message->data.layer2, LAYER2_DATA_HEADERS_LEN);
+      
+      memcpy((datagram.message + LAYER2_DATA_HEADERS_LEN), message->data.layer2.payload,
+             WIFI_NODE_MTU);
+
+      datagramsize += LAYER2_DATA_HEADERS_LEN + message->data.layer2.length;  
       shouldTransmitt = true;
     }
   }
