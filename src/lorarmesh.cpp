@@ -1,7 +1,7 @@
 #include <Layer1_LoRa.h>
 #include <LoRaLayer2.h>
-#include <wifinode.h>
 #include "loramesh.h"
+#include <wifinode.h>
 
 #define ADDR_LENGTH 4
 #define LORA_CS 18
@@ -43,6 +43,7 @@ LoraMesh::LoraMesh(DataQueue<message_t>* txQueue,
     delay(BOOT_LL1_DELAY_MICROS);
     if (attempts-- == 0)
       ESP.restart();
+      
   }
   ll2 = new LL2Class(layer1);
   ll2->setInterval(10000);  // this value needs more research
@@ -70,20 +71,19 @@ void LoraMesh::transmit() {
     datagramsize += sizeof(control_data_t);
     shouldTransmitt = true;
 
-  } else if (message->type == DATA_MESSAGE &&
-             (LAYER2_DATA_HEADERS_LEN + message->data.layer2.length) <
-                 WIFI_NODE_MTU) {
+  } else if (message->type == DATA_MESSAGE && (LAYER2_DATA_HEADERS_LEN + message->data.layer2.length) < WIFI_NODE_MTU) {
     auto destinationAddr = router->getGatewayAddress();
     if (destinationAddr > 0) {
       memcpy(datagram.destination, &destinationAddr, ADDR_LENGTH);
-
+      
       memcpy(datagram.message, &message->data.layer2, LAYER2_DATA_HEADERS_LEN);
+      
+      memcpy((datagram.message + LAYER2_DATA_HEADERS_LEN), message->data.layer2.payload,
+             message->data.layer2.length);
 
-      memcpy((datagram.message + LAYER2_DATA_HEADERS_LEN),
-             message->data.layer2.payload, message->data.layer2.length);
-
-      datagramsize += LAYER2_DATA_HEADERS_LEN + message->data.layer2.length;
+      datagramsize += LAYER2_DATA_HEADERS_LEN + message->data.layer2.length;     
       shouldTransmitt = true;
+
     }
   }
 
@@ -98,11 +98,28 @@ void LoraMesh::transmit() {
   free(message);
 }
 void LoraMesh::receive() {
-  message_t* message = nullptr;  // TODO read actual data from LoRaLayer2
-  if (message == nullptr)
-    return;
+  message_t* message = nullptr;  
+  // TODO read actual data from LoRaLayer2
+  
+  ll2->daemon(); 
+  struct Packet packet = ll2->readData();
 
-  if (message->type == CONTROL_MESSAGE) {
+  if (packet.datagram.message == nullptr)
+    return;
+  
+  message->type = (message_type_t)packet.datagram.type;
+  
+  if (message->type == CONTROL_MESSAGE){
+    memcpy(&message->data.control, packet.datagram.message, sizeof(control_data_t));
     router->handleControlMessage(message);
+
+  }else if (message->type == DATA_MESSAGE) { // if the device is the gateway 
+    //auto destinationAddr = router->getGatewayAddress();
+    auto destination = packet.datagram.destination;
+    memcpy(message, packet.datagram.message, MESSAGE_LENGTH);
+    memcpy(&message->data.layer2, packet.datagram.message, LAYER2_DATA_HEADERS_LEN);
+    memcpy(message->data.layer2.payload, packet.datagram.message + LAYER2_DATA_HEADERS_LEN, message->data.layer2.length);    
   }
+
+   rxQueue->push(message); 
 }
