@@ -7,8 +7,6 @@
 #include <layer2.h>
 #include "message.h"
 #include "router.h"
-#include <Layer1_LoRa.h>
-#include <LoRaLayer2.h>
 
 #define LORA_TASKS_CORE 0
 
