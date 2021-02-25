@@ -70,7 +70,7 @@ void LoraMesh::transmit() {
     datagramsize += sizeof(control_data_t);
     shouldTransmitt = true;
 
-  } else if (message->type == DATA_MESSAGE) {
+  } else if (message->type == DATA_MESSAGE && (LAYER2_DATA_HEADERS_LEN + message->data.layer2.length) < WIFI_NODE_MTU) {
     auto destinationAddr = router->getGatewayAddress();
     if (destinationAddr > 0) {
       memcpy(datagram.destination, &destinationAddr, ADDR_LENGTH);
@@ -78,10 +78,11 @@ void LoraMesh::transmit() {
       memcpy(datagram.message, &message->data.layer2, LAYER2_DATA_HEADERS_LEN);
       
       memcpy((datagram.message + LAYER2_DATA_HEADERS_LEN), message->data.layer2.payload,
-             WIFI_NODE_MTU);
+             message->data.layer2.length);
 
-      datagramsize += LAYER2_DATA_HEADERS_LEN + message->data.layer2.length;  
+      datagramsize += LAYER2_DATA_HEADERS_LEN + message->data.layer2.length;     
       shouldTransmitt = true;
+
     }
   }
 
