@@ -119,6 +119,10 @@ void LoraMesh::receive() {
 
   }else if (packet.datagram.type == DATA_MESSAGE) { // if the device is the gateway 
     //auto destinationAddr = router->getGatewayAddress();
+    layer2_data_t layer2Data;
+    memcpy(&layer2Data, packet.datagram.message, LAYER2_DATA_HEADERS_LEN);
+    memcpy(&layer2Data + LAYER2_DATA_HEADERS_LEN, packet.datagram.message + LAYER2_DATA_HEADERS_LEN, layer2Data.length );
+    *message = newDataMessage(layer2Data);
   }
 
    rxQueue->push(message);
