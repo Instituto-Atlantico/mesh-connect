@@ -20,7 +20,7 @@ static int BROADCAST_NODES[ADDR_LENGTH] = {0xff, 0xff, 0xff, 0xff};
 static void task(void* pointer) {
   auto loraMesh = (LoraMesh*)pointer;
   for (;;) {
-    //loraMesh->receive();
+    loraMesh->receive();
     loraMesh->transmit();
   }
 }
@@ -99,14 +99,11 @@ void LoraMesh::transmit() {
 }
 void LoraMesh::receive() {
   message_t* message = nullptr;  
-  // TODO read actual data from LoRaLayer2
-  
   ll2->daemon(); 
   struct Packet packet = ll2->readData();
-  
-  if (packet.datagram.message == nullptr)
+  // When buffer return 0, that means the packet have a size 0
+  if (packet.totalLength == 0)
     return;
-  
   
   if (packet.datagram.type == CONTROL_MESSAGE){
     control_data_type_t controlDataType;
@@ -115,15 +112,15 @@ void LoraMesh::receive() {
     memcpy(&source, packet.datagram.message + sizeof(control_data_type_t), sizeof(uint32_t));
     *message = newControlMessage(controlDataType, source);
     router->handleControlMessage(message);
-     
 
-  }else if (packet.datagram.type == DATA_MESSAGE) { // if the device is the gateway 
-    //auto destinationAddr = router->getGatewayAddress();
+  } else if (packet.datagram.type == DATA_MESSAGE) { // if the device is the gateway 
     layer2_data_t layer2Data;
     memcpy(&layer2Data, packet.datagram.message, LAYER2_DATA_HEADERS_LEN);
-    memcpy(&layer2Data + LAYER2_DATA_HEADERS_LEN, packet.datagram.message + LAYER2_DATA_HEADERS_LEN, layer2Data.length );
+    memcpy(layer2Data.payload, packet.datagram.message + LAYER2_DATA_HEADERS_LEN, layer2Data.length);
     *message = newDataMessage(layer2Data);
+  } else{
+    return;
   }
 
-   rxQueue->push(message);
+  rxQueue->push(message);
 }
