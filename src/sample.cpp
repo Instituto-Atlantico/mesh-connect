@@ -6,6 +6,7 @@
 #include "loramesh.h"
 
 
+
 #define BLUE_LED 2
 
 #define OLED_SDA 4
@@ -23,8 +24,8 @@ DataQueue<message_t>* wifiToLoraQueue;
 DataQueue<message_t>* loraToWifiQueue;
 WifiNode* wifi;
 LoraMesh* mesh;
-message_t *messageControl;
-message_t *messageData;
+//auto messageControl;
+// message_t *messageData;
 
 
 void setup() {
@@ -38,24 +39,47 @@ void setup() {
   wifiToLoraQueue = new DataQueue<message_t>(DATA_QUEUE_LENGTH);
   loraToWifiQueue = new DataQueue<message_t>(DATA_QUEUE_LENGTH);
   
-  //Testing Control message
-  mesh = new LoraMesh(wifiToLoraQueue, loraToWifiQueue, new Router());
   
-  control_data_type_t controlDataType = GW_ANNOUNCEMENT;
-  uint32_t source = 12;
+  mesh = new LoraMesh(wifiToLoraQueue, loraToWifiQueue, new Router());
+  //Testing Control message
+  control_data_t controlData;
+  controlData.type = GW_ANNOUNCEMENT;
+  controlData.source = 12;
+  // Serial.println(controlDataType);
+  // Serial.println(source);
   // Serial.println(s);
-  *messageControl = newControlMessage(controlDataType,source);
-  wifiToLoraQueue->push(messageControl);
+  auto messageControl = newControlMessage(controlData.type, controlData.source);
+  wifiToLoraQueue->push(&messageControl); 
 
   // Testing Data Message
   layer2_data_t layer2Data;
   layer2Data.type = ETHER_TYPE_UNKNOWN;
-  memset(layer2Data.source, 0 , sizeof(uint8_t) * 6);
-  memset(layer2Data.destination, 0 , sizeof(uint8_t) * 6);
-  layer2Data.length = 10;  
-  uint8_t data = 12;
+  Serial.print("Type: ");
+  Serial.println(layer2Data.type);
+  memset(layer2Data.source, 1 , sizeof(uint8_t) * 6);
+  Serial.println("Source: ");
+  for(int i = 0; i<6; i++){
+    Serial.println(layer2Data.source[i]);
+  }
+  Serial.println("Destination: ");
+  memset(layer2Data.destination, 1 , sizeof(uint8_t) * 6);
+  for(int i = 0; i<6; i++){
+    Serial.println(layer2Data.destination[i]);
+  }
+  layer2Data.length = 10;
+  Serial.print("Length: ");
+  Serial.println(layer2Data.length);
+  uint8_t data = 10; 
   layer2Data.payload = &data;
-  *messageData = newDataMessage(layer2Data);
+  Serial.print("Payload: ");
+  if(layer2Data.payload == nullptr){
+    Serial.println("Sucess");
+  }else{
+     Serial.println("Fail");
+  }
+  // This part of the code is failing
+  auto messageData = newDataMessage(layer2Data);
+  wifiToLoraQueue->push(&messageData);
 
 
   if (shouldEnableGateway(GATEWAY_SSID)) {
