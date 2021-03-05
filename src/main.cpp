@@ -4,6 +4,7 @@
 #include "ap.h"
 #include "gateway.h"
 #include "loramesh.h"
+#include <wifinode.h>
 
 #define BLUE_LED 2
 
@@ -35,6 +36,9 @@ void setup() {
   loraToWifiQueue = new DataQueue<message_t>(DATA_QUEUE_LENGTH);
 
   mesh = new LoraMesh(wifiToLoraQueue, loraToWifiQueue, new Router());
+
+   // Testing Control message
+            
 
   if (shouldEnableGateway(GATEWAY_SSID)) {
     wifi = new Gateway(GATEWAY_SSID, wifiToLoraQueue, loraToWifiQueue);
@@ -73,4 +77,19 @@ void loop() {
   display->display();
   digitalWrite(BLUE_LED, LOW);
   delay(1000);
+
+  // Control Message
+  // control_data_t controlData;
+  // controlData.type = GW_ANNOUNCEMENT;
+  // controlData.source = 12;
+  // auto messageControl = newControlMessage(controlData.type, controlData.source);
+  // wifiToLoraQueue->push(&messageControl); 
+
+  // Data Message
+  layer2_data_t layer2Data;
+  layer2Data.type = ETHER_TYPE_UNKNOWN;
+  uint8_t* mac = WiFi.macAddress(mac);
+  memcpy(layer2Data.source, mac, sizeof(uint8_t)*6);
+  uint8_t rec = 123456;
+  if(LOCAL == layer2Data.destination)
 }

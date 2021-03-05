@@ -22,8 +22,6 @@ DataQueue<message_t>* wifiToLoraQueue;
 DataQueue<message_t>* loraToWifiQueue;
 WifiNode* wifi;
 LoraMesh* mesh;
-// auto messageControl;
-// message_t *messageData;
 
 void setup() {
   Serial.begin(115200);
@@ -37,12 +35,9 @@ void setup() {
   loraToWifiQueue = new DataQueue<message_t>(DATA_QUEUE_LENGTH);
 
   mesh = new LoraMesh(wifiToLoraQueue, loraToWifiQueue, new Router());
-  // Testing Control message
-  control_data_t controlData;
-  controlData.type = GW_ANNOUNCEMENT;
-  controlData.source = 12;
-  auto messageControl = newControlMessage(controlData.type, controlData.source);
-  wifiToLoraQueue->push(&messageControl);
+
+   // Testing Control message
+            
 
   if (shouldEnableGateway(GATEWAY_SSID)) {
     wifi = new Gateway(GATEWAY_SSID, wifiToLoraQueue, loraToWifiQueue);
@@ -81,4 +76,11 @@ void loop() {
   display->display();
   digitalWrite(BLUE_LED, LOW);
   delay(1000);
+
+  control_data_t controlData;
+  controlData.type = GW_ANNOUNCEMENT;
+  controlData.source = 12;
+  auto messageControl = newControlMessage(controlData.type, controlData.source);
+  wifiToLoraQueue->push(&messageControl); 
+
 }

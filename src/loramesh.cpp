@@ -1,5 +1,5 @@
-#include <Arduino.h>
 #include "loramesh.h"
+#include <Arduino.h>
 #include <Layer1_LoRa.h>
 #include <LoRaLayer2.h>
 #include <wifinode.h>
@@ -16,6 +16,7 @@
 #define BOOT_LL1_DELAY_MICROS 500
 #define MAX_BOOT_LL1_RETRIES 10
 
+uint8_t LOCAL_ADDRESS[ADDR_LENGTH] = {0};
 static int BROADCAST_NODES[ADDR_LENGTH] = {0xff, 0xff, 0xff, 0xff};
 
 static void task(void* pointer) {
@@ -46,6 +47,7 @@ LoraMesh::LoraMesh(DataQueue<message_t>* txQueue,
       ESP.restart();
   }
   ll2 = new LL2Class(layer1);
+  ll2->setLocalAddress(generatingLocalMac(LOCAL_ADDRESS));
   ll2->setInterval(10000);  // this value needs more research
   ll2->init();
 
@@ -53,11 +55,27 @@ LoraMesh::LoraMesh(DataQueue<message_t>* txQueue,
                           &transceiverTaskHandle, LORA_TASKS_CORE);
 }
 
+char* LoraMesh::generatingLocalMac(uint8_t* mac) {
+  WiFi.macAddress(mac);
+  char* macStr = (char*)malloc(sizeof(char) * 16);
+  sprintf_P(macStr, "%02X%02X%02X%02X", mac[0], mac[1], mac[2], mac[3]);
+  return macStr;
+}
+
 void LoraMesh::transmit() {
   auto message = txQueue->poll();
-  Serial.println(message->data);
+
   if (message == nullptr)
     return;
+  
+  // Print de test of poll in the txqueue
+  // if(message->type == CONTROL_MESSAGE){
+  //   Serial.print("Control message data : ");
+  //   Serial.print(message->data.control.source);
+  //   Serial.print(" - ");
+  //   Serial.println(message->data.control.type);
+  //   delay(500);
+  // }
 
   ll2->daemon();
   struct Datagram datagram;
@@ -70,7 +88,7 @@ void LoraMesh::transmit() {
     memcpy(datagram.message, &message->data.control, sizeof(control_data_t));
     datagramsize += sizeof(control_data_t);
     shouldTransmitt = true;
-
+    
   } else if (message->type == DATA_MESSAGE &&
              (LAYER2_DATA_HEADERS_LEN + message->data.layer2.length) <
                  WIFI_NODE_MTU) {
@@ -89,6 +107,7 @@ void LoraMesh::transmit() {
   }
 
   if (shouldTransmitt) {
+    Serial.println("Transmited");
     ll2->writeData(datagram, datagramsize);
   }
 
@@ -104,18 +123,24 @@ void LoraMesh::receive() {
   struct Packet packet = ll2->readData();
   // When buffer return 0, that means the packet have a size 0
   if (packet.totalLength == 0)
+    
     return;
 
   if (packet.datagram.type == CONTROL_MESSAGE) {
+
     control_data_type_t controlDataType;
     uint32_t source;
     memcpy(&controlDataType, packet.datagram.message,
            sizeof(control_data_type_t));
     memcpy(&source, packet.datagram.message + sizeof(control_data_type_t),
            sizeof(uint32_t));
-    *message = newControlMessage(controlDataType, source);
-    router->handleControlMessage(message);
 
+    auto m = newControlMessage(controlDataType, source);
+    Serial.println("Control Message received");
+
+    router->handleControlMessage(&m);
+    message = &m;
+    
   } else if (packet.datagram.type ==
              DATA_MESSAGE) {  // if the device is the gateway
     layer2_data_t layer2Data;
