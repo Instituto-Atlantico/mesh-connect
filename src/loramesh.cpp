@@ -92,10 +92,13 @@ void LoraMesh::transmit() {
   } else if (message->type == DATA_MESSAGE &&
              (LAYER2_DATA_HEADERS_LEN + message->data.layer2.length) <
                  WIFI_NODE_MTU) {
-    auto destinationAddr = router->getGatewayAddress();
+    // auto destinationAddr = router->getGatewayAddress();
+    auto destinationAddr = 1;
+    Serial.println("Cheguei ate aqui");
     if (destinationAddr > 0) {
-      memcpy(datagram.destination, &destinationAddr, ADDR_LENGTH);
-
+      // memcpy(datagram.destination, &destinationAddr, ADDR_LENGTH);
+      // char receiver[] = {"AC67B223"}; 
+      memcpy(datagram.destination, message->data.layer2.destination, ADDR_LENGTH);
       memcpy(datagram.message, &message->data.layer2, LAYER2_DATA_HEADERS_LEN);
 
       memcpy((datagram.message + LAYER2_DATA_HEADERS_LEN),
@@ -112,7 +115,8 @@ void LoraMesh::transmit() {
   }
 
   if (message->type == DATA_MESSAGE) {
-    free(message->data.layer2.payload);
+    Serial.println("Pode aqui 1");
+    // free(message->data.layer2.payload);
   }
 
   free(message);
@@ -134,8 +138,8 @@ void LoraMesh::receive() {
            sizeof(control_data_type_t));
     memcpy(&source, packet.datagram.message + sizeof(control_data_type_t),
            sizeof(uint32_t));
-
     auto m = newControlMessage(controlDataType, source);
+
     Serial.println("Control Message received");
 
     router->handleControlMessage(&m);
@@ -148,7 +152,10 @@ void LoraMesh::receive() {
     memcpy(layer2Data.payload,
            packet.datagram.message + LAYER2_DATA_HEADERS_LEN,
            layer2Data.length);
-    *message = newDataMessage(layer2Data);
+    Serial.println("Data Message received");
+    auto m = newDataMessage(layer2Data);
+    message = &m;
+
   } else {
     return;
   }

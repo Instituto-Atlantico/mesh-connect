@@ -86,10 +86,22 @@ void loop() {
   // wifiToLoraQueue->push(&messageControl); 
 
   // Data Message
+  Serial.println("Start Message");
   layer2_data_t layer2Data;
   layer2Data.type = ETHER_TYPE_UNKNOWN;
-  uint8_t* mac = WiFi.macAddress(mac);
+  uint8_t mac[8]  = {0};
+  WiFi.macAddress(mac);
   memcpy(layer2Data.source, mac, sizeof(uint8_t)*6);
-  uint8_t rec = 123456;
-  if(LOCAL == layer2Data.destination)
+  char receiver[] = {"AC67B223"};
+  memcpy(layer2Data.destination, receiver, sizeof(receiver));
+  int data = 12;
+  layer2Data.payload = &data;
+  layer2Data.length = sizeof(data);
+  auto messageData = newDataMessage(layer2Data);
+   
+  wifiToLoraQueue->push(&messageData);
+  // Serial.println("Inqueue Message");
 }
+
+  
+  
