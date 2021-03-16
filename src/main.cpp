@@ -1,10 +1,10 @@
 #include <Arduino.h>
 #include <dataqueue.h>
 #include <display.h>
+#include <wifinode.h>
 #include "ap.h"
 #include "gateway.h"
 #include "loramesh.h"
-#include <wifinode.h>
 
 #define BLUE_LED 2
 
@@ -37,8 +37,7 @@ void setup() {
 
   mesh = new LoraMesh(wifiToLoraQueue, loraToWifiQueue, new Router());
 
-   // Testing Control message
-            
+  // Testing Control message
 
   if (shouldEnableGateway(GATEWAY_SSID)) {
     wifi = new Gateway(GATEWAY_SSID, wifiToLoraQueue, loraToWifiQueue);
@@ -82,26 +81,44 @@ void loop() {
   // control_data_t controlData;
   // controlData.type = GW_ANNOUNCEMENT;
   // controlData.source = 12;
-  // auto messageControl = newControlMessage(controlData.type, controlData.source);
-  // wifiToLoraQueue->push(&messageControl); 
+  // auto messageControl = newControlMessage(controlData.type,
+  // controlData.source); wifiToLoraQueue->push(&messageControl);
+
+  // COM5 - Verde
+  // COM6 - Vermelho
 
   // Data Message
-  Serial.println("Start Message");
   layer2_data_t layer2Data;
   layer2Data.type = ETHER_TYPE_UNKNOWN;
-  uint8_t mac[8]  = {0};
-  WiFi.macAddress(mac);
-  memcpy(layer2Data.source, mac, sizeof(uint8_t)*6);
-  char receiver[] = {"AC67B223"};
-  memcpy(layer2Data.destination, receiver, sizeof(receiver));
-  int data = 12;
-  layer2Data.payload = &data;
-  layer2Data.length = sizeof(data);
-  auto messageData = newDataMessage(layer2Data);
-   
-  wifiToLoraQueue->push(&messageData);
-  // Serial.println("Inqueue Message");
-}
+  // Serial.print("\nType: ");
+  // Serial.print(layer2Data.type);
+  uint8_t mac[6] = {0};
 
-  
-  
+  WiFi.macAddress(mac);
+  memcpy(layer2Data.source, mac, sizeof(uint8_t) * 6);
+  // Serial.print("\nSource: ");
+  for (int i = 0; i < 6; i++) {
+    // Serial.print(layer2Data.source[i]);
+  }
+
+  uint8_t receiver[6] = {0xAC, 0x67, 0xB2, 0x24, 0x14, 0xBC};
+  memcpy(layer2Data.destination, receiver, sizeof(receiver));
+  // Serial.print("\nDestination: ");
+  for (size_t i = 0; i < 6; i++) {
+    // Serial.print(layer2Data.destination[i]);
+  }
+
+  uint8_t data[8] = {0xfe, 0xeb, 0xda, 0xed, 0xaa, 0xbb, 0xcc, 0xdd};    // FEDDAEBF
+  layer2Data.payload = (uint8_t*)malloc(sizeof(data));
+  memcpy(layer2Data.payload, &data, 8*sizeof(uint8_t));
+
+  layer2Data.length = sizeof(data);
+  // Serial.print("\nPayload: ");
+  // Serial.printf("%X", *((int*)layer2Data.payload));
+
+  // Serial.print("\nLength: ");
+  // Serial.println(layer2Data.length);
+
+  auto messageData = newDataMessage(layer2Data);
+  wifiToLoraQueue->push(&messageData);
+}

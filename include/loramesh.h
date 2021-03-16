@@ -24,6 +24,7 @@ class LoraMesh {
            DataQueue<message_t>* rxQueue,
            Router* router);
 
+  void generateDataMessage();
   char *generatingLocalMac(uint8_t * mac);
   void transmit();
   void receive();

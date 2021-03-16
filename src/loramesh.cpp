@@ -10,6 +10,7 @@
 #define LORA_IRQ 26
 #define LORA_FREQ 915E6
 #define TX_POWER 20
+#define LL2_DEBUG 1
 
 #define DATAGRAM_HEADER 5
 
@@ -22,7 +23,7 @@ static int BROADCAST_NODES[ADDR_LENGTH] = {0xff, 0xff, 0xff, 0xff};
 static void task(void* pointer) {
   auto loraMesh = (LoraMesh*)pointer;
   for (;;) {
-    loraMesh->receive();
+    //loraMesh->receive();
     loraMesh->transmit();
   }
 }
@@ -67,15 +68,6 @@ void LoraMesh::transmit() {
 
   if (message == nullptr)
     return;
-  
-  // Print de test of poll in the txqueue
-  // if(message->type == CONTROL_MESSAGE){
-  //   Serial.print("Control message data : ");
-  //   Serial.print(message->data.control.source);
-  //   Serial.print(" - ");
-  //   Serial.println(message->data.control.type);
-  //   delay(500);
-  // }
 
   ll2->daemon();
   struct Datagram datagram;
@@ -94,11 +86,11 @@ void LoraMesh::transmit() {
                  WIFI_NODE_MTU) {
     // auto destinationAddr = router->getGatewayAddress();
     auto destinationAddr = 1;
-    Serial.println("Cheguei ate aqui");
+    t
     if (destinationAddr > 0) {
       // memcpy(datagram.destination, &destinationAddr, ADDR_LENGTH);
-      // char receiver[] = {"AC67B223"}; 
-      memcpy(datagram.destination, message->data.layer2.destination, ADDR_LENGTH);
+      uint8_t receiver[4] = {0xAC, 0x67, 0xB2, 0x24}; 
+      memcpy(datagram.destination, receiver, ADDR_LENGTH);
       memcpy(datagram.message, &message->data.layer2, LAYER2_DATA_HEADERS_LEN);
 
       memcpy((datagram.message + LAYER2_DATA_HEADERS_LEN),
@@ -110,26 +102,28 @@ void LoraMesh::transmit() {
   }
 
   if (shouldTransmitt) {
-    Serial.println("Transmited");
     ll2->writeData(datagram, datagramsize);
   }
 
   if (message->type == DATA_MESSAGE) {
-    Serial.println("Pode aqui 1");
-    // free(message->data.layer2.payload);
+    free(message->data.layer2.payload);
   }
 
   free(message);
+  // Serial.print(".");
+
 }
+
 void LoraMesh::receive() {
-  message_t* message = nullptr;
+  message_t* message;
   ll2->daemon();
   struct Packet packet = ll2->readData();
   // When buffer return 0, that means the packet have a size 0
-  if (packet.totalLength == 0)
-    
-    return;
 
+  if (packet.totalLength == 0){
+    // Serial.println("Empty Message");
+    return;
+  }  
   if (packet.datagram.type == CONTROL_MESSAGE) {
 
     control_data_type_t controlDataType;
@@ -157,7 +151,11 @@ void LoraMesh::receive() {
     message = &m;
 
   } else {
+    Serial.println("Empty type");
     return;
   }
-  rxQueue->push(message);
+  
+  if(message != nullptr){
+     rxQueue->push(message);
+  }
 }
