@@ -26,6 +26,7 @@ static void task(void* pointer) {
     //loraMesh->receive();
     loraMesh->transmit();
   }
+  vTaskDelay(10000);
 }
 
 LoraMesh::LoraMesh(DataQueue<message_t>* txQueue,
@@ -80,22 +81,25 @@ void LoraMesh::transmit() {
     memcpy(datagram.message, &message->data.control, sizeof(control_data_t));
     datagramsize += sizeof(control_data_t);
     shouldTransmitt = true;
-    
+
   } else if (message->type == DATA_MESSAGE &&
              (LAYER2_DATA_HEADERS_LEN + message->data.layer2.length) <
                  WIFI_NODE_MTU) {
     // auto destinationAddr = router->getGatewayAddress();
     auto destinationAddr = 1;
-    t
-    if (destinationAddr > 0) {
+      if (destinationAddr > 0) {
       // memcpy(datagram.destination, &destinationAddr, ADDR_LENGTH);
-      uint8_t receiver[4] = {0xAC, 0x67, 0xB2, 0x24}; 
+      uint8_t receiver[4] = {0xAC, 0x67, 0xB2, 0x24};
       memcpy(datagram.destination, receiver, ADDR_LENGTH);
       memcpy(datagram.message, &message->data.layer2, LAYER2_DATA_HEADERS_LEN);
-
-      memcpy((datagram.message + LAYER2_DATA_HEADERS_LEN),
+      const static int padding = 2;
+      memcpy((datagram.message + LAYER2_DATA_HEADERS_LEN - padding),
              message->data.layer2.payload, message->data.layer2.length);
-
+      // int* p = (int*)message->data.layer2.payload;
+      // for (int i = 0; i < message->data.layer2.length; i++)
+      // {
+      //   Serial.printf("%X", p[i]);
+      // }
       datagramsize += LAYER2_DATA_HEADERS_LEN + message->data.layer2.length;
       shouldTransmitt = true;
     }
@@ -111,7 +115,6 @@ void LoraMesh::transmit() {
 
   free(message);
   // Serial.print(".");
-
 }
 
 void LoraMesh::receive() {
@@ -120,12 +123,11 @@ void LoraMesh::receive() {
   struct Packet packet = ll2->readData();
   // When buffer return 0, that means the packet have a size 0
 
-  if (packet.totalLength == 0){
-    // Serial.println("Empty Message");
+  if (packet.totalLength == 0) {
+    Serial.print(".");
     return;
-  }  
+  }
   if (packet.datagram.type == CONTROL_MESSAGE) {
-
     control_data_type_t controlDataType;
     uint32_t source;
     memcpy(&controlDataType, packet.datagram.message,
@@ -138,7 +140,7 @@ void LoraMesh::receive() {
 
     router->handleControlMessage(&m);
     message = &m;
-    
+
   } else if (packet.datagram.type ==
              DATA_MESSAGE) {  // if the device is the gateway
     layer2_data_t layer2Data;
@@ -147,6 +149,15 @@ void LoraMesh::receive() {
            packet.datagram.message + LAYER2_DATA_HEADERS_LEN,
            layer2Data.length);
     Serial.println("Data Message received");
+    Serial.print("\nHeaders: ");
+    for(int i = 0; i<LAYER2_DATA_HEADERS_LEN ; i++ ){
+      Serial.printf("%X ",packet.datagram.message[i] );
+    }
+    Serial.print("\nPayload: ");
+    for(int i = LAYER2_DATA_HEADERS_LEN; i< sizeof(packet.datagram.message); i++ ){
+      Serial.printf("%X ",packet.datagram.message[i] );
+    }
+    Serial.println("");
     auto m = newDataMessage(layer2Data);
     message = &m;
 
@@ -154,8 +165,8 @@ void LoraMesh::receive() {
     Serial.println("Empty type");
     return;
   }
-  
-  if(message != nullptr){
-     rxQueue->push(message);
+
+  if (message != nullptr) {
+    rxQueue->push(message);
   }
 }
