@@ -88,43 +88,43 @@ void loop() {
   // COM6 - Vermelho
 
   // Data Message
-  layer2_data_t layer2Data;
-  layer2Data.type = ETHER_TYPE_IPV4;
-  // Serial.print("\nType: ");
-  // Serial.print(layer2Data.type);
-    uint8_t mac[6] = {0};
+  // layer2_data_t layer2Data;
+  // layer2Data.type = ETHER_TYPE_IPV4;
+  // // Serial.print("\nType: ");
+  // // Serial.print(layer2Data.type);
+  //   uint8_t mac[6] = {0};
 
-  WiFi.macAddress(mac);
-  memcpy(layer2Data.source, mac, sizeof(uint8_t) * 6);
-  // Serial.print("\nSource: ");
-  for (int i = 0; i < 6; i++) {
-    // Serial.printf("%X",layer2Data.source[i]);
-  }
+  // WiFi.macAddress(mac);
+  // memcpy(layer2Data.source, mac, sizeof(uint8_t) * 6);
+  // // Serial.print("\nSource: ");
+  // for (int i = 0; i < 6; i++) {
+  //   // Serial.printf("%X",layer2Data.source[i]);
+  // }
 
-  uint8_t receiver[6] = {0xAC, 0x67, 0xB2, 0x24, 0x14, 0xBC};
-  memcpy(layer2Data.destination, receiver, sizeof(receiver));
-  // Serial.print("\nDestination: ");
-  for (size_t i = 0; i < 6; i++) {
-    //  Serial.printf("%X",layer2Data.destination[i]);
-  }
+  // uint8_t receiver[6] = {0xAC, 0x67, 0xB2, 0x24, 0x14, 0xBC};
+  // memcpy(layer2Data.destination, receiver, sizeof(receiver));
+  // // Serial.print("\nDestination: ");
+  // for (size_t i = 0; i < 6; i++) {
+  //   //  Serial.printf("%X",layer2Data.destination[i]);
+  // }
 
-  uint8_t data[192];//= {0xaa, 0xbb, 0xcc, 0xdd, 0xA1, 0xE5, 0xE1, 0x14, 0xAB, 0xCD, 0xBA, 0xDC};  // FEDDAEBF
+  // uint8_t data[192];//= {0xaa, 0xbb, 0xcc, 0xdd, 0xA1, 0xE5, 0xE1, 0x14, 0xAB, 0xCD, 0xBA, 0xDC};  // FEDDAEBF
   
-  //  memset(data, 0xab, sizeof(data));
-  for(int i = 0; i<192; i++){
-    data[i] = i;
-  }
-  // Serial.println("");
-  layer2Data.payload = (uint8_t*)malloc(sizeof(data));
-  memcpy(layer2Data.payload, &data, 192 *sizeof(uint8_t));
+  // //  memset(data, 0xab, sizeof(data));
+  // for(int i = 1; i<=192; i++){
+  //   data[i-1] = i;
+  // }
+  // // Serial.println("");
+  // layer2Data.payload = (uint8_t*)malloc(sizeof(data));
+  // memcpy(layer2Data.payload, &data, 192 *sizeof(uint8_t));
 
-  layer2Data.length = sizeof(data);
-  // Serial.print("\nPayload: ");
-  // Serial.printf("%X", *((int*)layer2Data.payload));
+  // layer2Data.length = sizeof(data);
+  // // Serial.print("\nPayload: ");
+  // // Serial.printf("%X", *((int*)layer2Data.payload));
 
-  // Serial.print("\nLength: ");
-  // Serial.println(layer2Data.length);
+  // // Serial.print("\nLength: ");
+  // // Serial.println(layer2Data.length);
 
-  auto messageData = newDataMessage(layer2Data);
-  wifiToLoraQueue->push(&messageData);
+  // auto messageData = newDataMessage(layer2Data);
+  // wifiToLoraQueue->push(&messageData);
 }

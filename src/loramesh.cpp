@@ -19,12 +19,13 @@
 
 uint8_t LOCAL_ADDRESS[ADDR_LENGTH] = {0};
 static int BROADCAST_NODES[ADDR_LENGTH] = {0xff, 0xff, 0xff, 0xff};
+const static int padding = 2;
 
 static void task(void* pointer) {
   auto loraMesh = (LoraMesh*)pointer;
   for (;;) {
-    //loraMesh->receive();
-    loraMesh->transmit();
+    loraMesh->receive();
+    // loraMesh->transmit();
   }
   vTaskDelay(10000);
 }
@@ -92,7 +93,7 @@ void LoraMesh::transmit() {
       uint8_t receiver[4] = {0xAC, 0x67, 0xB2, 0x24};
       memcpy(datagram.destination, receiver, ADDR_LENGTH);
       memcpy(datagram.message, &message->data.layer2, LAYER2_DATA_HEADERS_LEN);
-      const static int padding = 2;
+      // const static int padding = 2;
       memcpy((datagram.message + LAYER2_DATA_HEADERS_LEN - padding),
              message->data.layer2.payload, message->data.layer2.length);
       // int* p = (int*)message->data.layer2.payload;
@@ -124,7 +125,6 @@ void LoraMesh::receive() {
   // When buffer return 0, that means the packet have a size 0
 
   if (packet.totalLength == 0) {
-    Serial.print(".");
     return;
   }
   if (packet.datagram.type == CONTROL_MESSAGE) {
@@ -144,29 +144,76 @@ void LoraMesh::receive() {
   } else if (packet.datagram.type ==
              DATA_MESSAGE) {  // if the device is the gateway
     layer2_data_t layer2Data;
+    
     memcpy(&layer2Data, packet.datagram.message, LAYER2_DATA_HEADERS_LEN);
-    memcpy(layer2Data.payload,
+    memcpy(&layer2Data.payload,
            packet.datagram.message + LAYER2_DATA_HEADERS_LEN,
            layer2Data.length);
-    Serial.println("Data Message received");
-    Serial.print("\nHeaders: ");
-    for(int i = 0; i<LAYER2_DATA_HEADERS_LEN ; i++ ){
-      Serial.printf("%X ",packet.datagram.message[i] );
-    }
-    Serial.print("\nPayload: ");
-    for(int i = LAYER2_DATA_HEADERS_LEN; i< sizeof(packet.datagram.message); i++ ){
-      Serial.printf("%X ",packet.datagram.message[i] );
-    }
-    Serial.println("");
+    
+    // Serial.println(layer2Data.type);
+    // Serial.println(layer2Data.length);
+    // Serial.printf("Source: \n");
+    // for(int i = 0; i<6; i++){
+    //   Serial.printf("%X ", layer2Data.source[i]);
+    // }
+    // Serial.printf("Destination: \n");
+    //  for(int i = 0; i<6; i++){
+    //   Serial.printf("%X ", layer2Data.destination[i]);
+    // }
+    // Serial.println("Data Message received");
+    // for(int i = 0; i < 67; i++){
+    //   Serial.printf("[%d]:%X ", i, packet.datagram.message[i]);
+    // }
     auto m = newDataMessage(layer2Data);
-    message = &m;
+    // Serial.printf("Type: %X\n", m.data.layer2.type);
+    // Serial.printf("Lenght: %X\n",m.data.layer2.length);
+    // Serial.print("Source: ");
+    // for (int i = 0; i < 6; i++) {
+    //   Serial.printf("%X", m.data.layer2.source[i]);
+    // }
+    memcpy(&message->data, &m, sizeof(m));
 
+   
+  
   } else {
     Serial.println("Empty type");
     return;
   }
 
-  if (message != nullptr) {
-    rxQueue->push(message);
+   if (message != nullptr) {
+    Serial.printf("Type: %X\n", (message->data.layer2.type));
+    Serial.printf("Lenght: %X\n", message->data.layer2.length);
+    Serial.print("Source: ");
+    for (int i = 0; i < 6; i++) {
+      Serial.printf("%X", message->data.layer2.source[i]);
+    }
+    
+    // rxQueue->push(message); 
+    // auto m =  rxQueue->poll();
+    
+    // Serial.printf("\nType: %X \n", m->data.layer2.type);
+    // Serial.printf("Source: \n");
+    // for(int i = 0; i<6; i++){
+    //   Serial.printf("%X ", m->data.layer2.source[i]);
+    // }
+    // Serial.printf("\n");
+    // Serial.printf("Destination: \n");
+    // for(int i = 0; i<6; i++){
+    //   Serial.printf("%X ", m->data.layer2.destination[i]);
+    // }
+    // Serial.printf("\n");
+    // Serial.printf("\nLenght: %X\n", m->data.layer2.length);
+
+    // Serial.printf("/n  Payload: \n");
+    
+    // for(int i = 0; i<m->data.layer2.length; i++){
+    //   int *ptr = *((int*)m->data.layer2.payload[i];
+    //   Serial.printf("[%d]: %X ", i,*ptr);
+    // }
+    // Serial.printf("\n");
+
+    // rxQueue->push(message);
   }
+
+
 }

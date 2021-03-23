@@ -26,8 +26,8 @@ typedef struct {
   } data;
 } message_t;
 
-inline message_t newDataMessage(layer2_data_t data) {
-  return message_t{.type = DATA_MESSAGE, .data = {.layer2 = data}};
+inline message_t newDataMessage(layer2_data_t data1) {
+  return message_t{.type = DATA_MESSAGE, .data = {.layer2 = data1}};
 };
 
 inline message_t newControlMessage(control_data_type_t type, uint32_t source) {
