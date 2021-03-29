@@ -88,7 +88,7 @@ void loop() {
   // COM6 - Vermelho
 
   // Data Message
-  // layer2_data_t layer2Data;
+  layer2_data_t layer2Data;
   // layer2Data.type = ETHER_TYPE_IPV4;
   // // Serial.print("\nType: ");
   // // Serial.print(layer2Data.type);
@@ -96,9 +96,9 @@ void loop() {
 
   // WiFi.macAddress(mac);
   // memcpy(layer2Data.source, mac, sizeof(uint8_t) * 6);
-  // // Serial.print("\nSource: ");
+  // Serial.print("\nSource: ");
   // for (int i = 0; i < 6; i++) {
-  //   // Serial.printf("%X",layer2Data.source[i]);
+  //   Serial.printf("%X",mac[i]);
   // }
 
   // uint8_t receiver[6] = {0xAC, 0x67, 0xB2, 0x24, 0x14, 0xBC};

@@ -150,29 +150,23 @@ void LoraMesh::receive() {
            packet.datagram.message + LAYER2_DATA_HEADERS_LEN,
            layer2Data.length);
     
-    // Serial.println(layer2Data.type);
-    // Serial.println(layer2Data.length);
-    // Serial.printf("Source: \n");
-    // for(int i = 0; i<6; i++){
-    //   Serial.printf("%X ", layer2Data.source[i]);
-    // }
-    // Serial.printf("Destination: \n");
-    //  for(int i = 0; i<6; i++){
-    //   Serial.printf("%X ", layer2Data.destination[i]);
-    // }
-    // Serial.println("Data Message received");
-    // for(int i = 0; i < 67; i++){
-    //   Serial.printf("[%d]:%X ", i, packet.datagram.message[i]);
-    // }
+    
     auto m = newDataMessage(layer2Data);
-    // Serial.printf("Type: %X\n", m.data.layer2.type);
-    // Serial.printf("Lenght: %X\n",m.data.layer2.length);
-    // Serial.print("Source: ");
-    // for (int i = 0; i < 6; i++) {
-    //   Serial.printf("%X", m.data.layer2.source[i]);
-    // }
-    memcpy(&message->data, &m, sizeof(m));
-
+    Serial.printf("Type: %X\n", m.data.layer2.type);
+    Serial.printf("Lenght: %X\n",m.data.layer2.length);
+    Serial.print("Source: ");
+    for (int i = 0; i < 6; i++) {
+      Serial.printf("%X", m.data.layer2.source[i]);
+    }
+    Serial.println("");
+    Serial.print("Destination: ");
+    for (int i = 0; i < 6; i++) {
+      Serial.printf("%X", m.data.layer2.destination[i]);
+    }
+    Serial.println("");
+    Serial.printf("Payload: ");
+    // I'm not have sucess in print the payload    
+    message = &m;
    
   
   } else {
@@ -180,39 +174,35 @@ void LoraMesh::receive() {
     return;
   }
 
+  if(message == nullptr){
+    Serial.println("This is a Shit");
+  }
+  
+
    if (message != nullptr) {
+    Serial.println("TESTE 2: ");
     Serial.printf("Type: %X\n", (message->data.layer2.type));
     Serial.printf("Lenght: %X\n", message->data.layer2.length);
     Serial.print("Source: ");
     for (int i = 0; i < 6; i++) {
       Serial.printf("%X", message->data.layer2.source[i]);
     }
+    Serial.println("");
+    Serial.print("Destination: ");
+    for (int i = 0; i < 6; i++) {
+      Serial.printf("%X", message->data.layer2.destination[i]);
+    }
+    Serial.println("");
+    Serial.printf("Payload: ");
+    // I'm not have  sucess in print the payload to check if it's correct
+    int* p = (int*)message->data.layer2.payload;
+    for (int i = 0; i < message->data.layer2.length; i++)
+    {
+      Serial.printf("%X", p[i]);
+    }
     
-    // rxQueue->push(message); 
-    // auto m =  rxQueue->poll();
+    // rxQueue->push(message); // When the code has this line, it crashes 
     
-    // Serial.printf("\nType: %X \n", m->data.layer2.type);
-    // Serial.printf("Source: \n");
-    // for(int i = 0; i<6; i++){
-    //   Serial.printf("%X ", m->data.layer2.source[i]);
-    // }
-    // Serial.printf("\n");
-    // Serial.printf("Destination: \n");
-    // for(int i = 0; i<6; i++){
-    //   Serial.printf("%X ", m->data.layer2.destination[i]);
-    // }
-    // Serial.printf("\n");
-    // Serial.printf("\nLenght: %X\n", m->data.layer2.length);
-
-    // Serial.printf("/n  Payload: \n");
-    
-    // for(int i = 0; i<m->data.layer2.length; i++){
-    //   int *ptr = *((int*)m->data.layer2.payload[i];
-    //   Serial.printf("[%d]: %X ", i,*ptr);
-    // }
-    // Serial.printf("\n");
-
-    // rxQueue->push(message);
   }
 
 
