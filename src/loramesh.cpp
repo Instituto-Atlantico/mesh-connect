@@ -27,7 +27,6 @@ static void task(void* pointer) {
     loraMesh->receive();
     // loraMesh->transmit();
   }
-  vTaskDelay(10000);
 }
 
 LoraMesh::LoraMesh(DataQueue<message_t>* txQueue,
@@ -96,11 +95,6 @@ void LoraMesh::transmit() {
       // const static int padding = 2;
       memcpy((datagram.message + LAYER2_DATA_HEADERS_LEN - padding),
              message->data.layer2.payload, message->data.layer2.length);
-      // int* p = (int*)message->data.layer2.payload;
-      // for (int i = 0; i < message->data.layer2.length; i++)
-      // {
-      //   Serial.printf("%X", p[i]);
-      // }
       datagramsize += LAYER2_DATA_HEADERS_LEN + message->data.layer2.length;
       shouldTransmitt = true;
     }
@@ -115,11 +109,10 @@ void LoraMesh::transmit() {
   }
 
   free(message);
-  // Serial.print(".");
 }
 
 void LoraMesh::receive() {
-  message_t* message;
+  message_t* message = nullptr;
   ll2->daemon();
   struct Packet packet = ll2->readData();
   // When buffer return 0, that means the packet have a size 0
@@ -134,74 +127,52 @@ void LoraMesh::receive() {
            sizeof(control_data_type_t));
     memcpy(&source, packet.datagram.message + sizeof(control_data_type_t),
            sizeof(uint32_t));
-    auto m = newControlMessage(controlDataType, source);
+    message = (message_t*)malloc(sizeof(packet.datagram.message));
+    *message = newControlMessage(controlDataType, source);
 
     Serial.println("Control Message received");
-
-    router->handleControlMessage(&m);
-    message = &m;
-
-  } else if (packet.datagram.type ==
+    router->handleControlMessage(message);
+  } 
+  
+  else if (packet.datagram.type ==
              DATA_MESSAGE) {  // if the device is the gateway
+    message = (message_t*)malloc(sizeof(packet.datagram.message));
     layer2_data_t layer2Data;
-    
+    Serial.printf("Datagram : ");
+    for(int i = 0; i<233; i++){
+      Serial.printf("%02X",packet.datagram.message[i]);
+    }
+    Serial.println("");
+
     memcpy(&layer2Data, packet.datagram.message, LAYER2_DATA_HEADERS_LEN);
-    memcpy(&layer2Data.payload,
-           packet.datagram.message + LAYER2_DATA_HEADERS_LEN,
+    layer2Data.payload = malloc(layer2Data.length);
+    memcpy(layer2Data.payload,
+           packet.datagram.message + LAYER2_DATA_HEADERS_LEN - 2,
            layer2Data.length);
-    
-    
-    auto m = newDataMessage(layer2Data);
-    Serial.printf("Type: %X\n", m.data.layer2.type);
-    Serial.printf("Lenght: %X\n",m.data.layer2.length);
+    *message = newDataMessage(layer2Data);
+    Serial.printf("Type: %02X\n", (message->data.layer2.type));
+    Serial.printf("Lenght: %02X\n", message->data.layer2.length);
     Serial.print("Source: ");
     for (int i = 0; i < 6; i++) {
-      Serial.printf("%X", m.data.layer2.source[i]);
+      Serial.printf("%X02", message->data.layer2.source[i]);
     }
     Serial.println("");
     Serial.print("Destination: ");
     for (int i = 0; i < 6; i++) {
-      Serial.printf("%X", m.data.layer2.destination[i]);
     }
     Serial.println("");
     Serial.printf("Payload: ");
-    // I'm not have sucess in print the payload    
-    message = &m;
-   
-  
-  } else {
+    for(int i = 0; i < message->data.layer2.length; i++)
+      printf("[%d] = %02X\n", i ,((uint8_t*) message->data.layer2.payload)[i]);
+    Serial.println("");
+  }
+  else {
     Serial.println("Empty type");
     return;
   }
-
-  if(message == nullptr){
-    Serial.println("This is a Shit");
-  }
-  
-
    if (message != nullptr) {
-    Serial.println("TESTE 2: ");
-    Serial.printf("Type: %X\n", (message->data.layer2.type));
-    Serial.printf("Lenght: %X\n", message->data.layer2.length);
-    Serial.print("Source: ");
-    for (int i = 0; i < 6; i++) {
-      Serial.printf("%X", message->data.layer2.source[i]);
-    }
-    Serial.println("");
-    Serial.print("Destination: ");
-    for (int i = 0; i < 6; i++) {
-      Serial.printf("%X", message->data.layer2.destination[i]);
-    }
-    Serial.println("");
-    Serial.printf("Payload: ");
-    // I'm not have  sucess in print the payload to check if it's correct
-    int* p = (int*)message->data.layer2.payload;
-    for (int i = 0; i < message->data.layer2.length; i++)
-    {
-      Serial.printf("%X", p[i]);
-    }
     
-    // rxQueue->push(message); // When the code has this line, it crashes 
+    rxQueue->push(message); 
     
   }
 
