@@ -37,8 +37,6 @@ void setup() {
 
   mesh = new LoraMesh(wifiToLoraQueue, loraToWifiQueue, new Router());
 
-  // Testing Control message
-
   if (shouldEnableGateway(GATEWAY_SSID)) {
     wifi = new Gateway(GATEWAY_SSID, wifiToLoraQueue, loraToWifiQueue);
   } else {
@@ -76,30 +74,4 @@ void loop() {
   display->display();
   digitalWrite(BLUE_LED, LOW);
   delay(1000);
-
-  // Control Message
-  // control_data_t controlData;
-  // controlData.type = GW_ANNOUNCEMENT;
-  // controlData.source = 100;
-
-  // auto messageControl = newControlMessage(controlData.type,controlData.source); 
-  // wifiToLoraQueue->push(&messageControl);
-
-
-  // Data Message
-//   layer2_data_t layer2Data;
-//   layer2Data.type = ETHER_TYPE_IPV4; 
-//   uint8_t mac[6] = {0};
-//   WiFi.macAddress(mac);
-//   uint8_t SOURCE[6] = {0xac, 0x67, 0xB2, 0x24, 0xc, 0x8};
-//   memcpy(layer2Data.source, SOURCE, sizeof(uint8_t) * 8);
-//   uint8_t RECEIVER[6] = {0x24, 0x6F, 0x28, 0x99, 0xBB, 0x48};
-//   memcpy(layer2Data.destination,RECEIVER, sizeof(RECEIVER));
-//   uint8_t data[192];
-//   memset(data, 0x1F, sizeof(data)); 
-//   layer2Data.payload = (uint8_t*)malloc(sizeof(data));
-//   memcpy(layer2Data.payload, &data, 192 *sizeof(uint8_t));
-//   layer2Data.length = sizeof(data);
-//   auto messageData = newDataMessage(layer2Data);
-//   wifiToLoraQueue->push(&messageData);
 }

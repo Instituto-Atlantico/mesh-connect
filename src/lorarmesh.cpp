@@ -18,14 +18,13 @@
 #define MAX_BOOT_LL1_RETRIES 10
 
 uint8_t LOCAL_ADDRESS[ADDR_LENGTH] = {0};
-// static int BROADCAST[ADDR_LENGTH] = {0xff, 0xff, 0xff, 0xff};
 const static int padding = 2;
 
 static void task(void* pointer) {
   auto loraMesh = (LoraMesh*)pointer;
   for (;;) {
     loraMesh->receive();
-    // loraMesh->transmit();
+    loraMesh->transmit();
   }
 }
 
