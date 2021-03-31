@@ -18,7 +18,7 @@
 #define MAX_BOOT_LL1_RETRIES 10
 
 uint8_t LOCAL_ADDRESS[ADDR_LENGTH] = {0};
-static int BROADCAST_NODES[ADDR_LENGTH] = {0xff, 0xff, 0xff, 0xff};
+// static int BROADCAST[ADDR_LENGTH] = {0xff, 0xff, 0xff, 0xff};
 const static int padding = 2;
 
 static void task(void* pointer) {
@@ -77,10 +77,16 @@ void LoraMesh::transmit() {
   bool shouldTransmitt = false;
 
   if (message->type == CONTROL_MESSAGE) {
-    memcpy(datagram.destination, BROADCAST_NODES, ADDR_LENGTH);
+    memcpy(datagram.destination, BROADCAST, ADDR_LENGTH);
     memcpy(datagram.message, &message->data.control, sizeof(control_data_t));
     datagramsize += sizeof(control_data_t);
     shouldTransmitt = true;
+    Serial.println("Control Message transmited");
+    // Serial.printf("Control Message :");
+    // for(int i = 0; i<233; i++){
+    //   Serial.printf("%02X",datagram.message[i]);
+    // }
+    // Serial.printf("\n");
 
   } else if (message->type == DATA_MESSAGE &&
              (LAYER2_DATA_HEADERS_LEN + message->data.layer2.length) <
@@ -89,7 +95,7 @@ void LoraMesh::transmit() {
     auto destinationAddr = 1;
       if (destinationAddr > 0) {
       // memcpy(datagram.destination, &destinationAddr, ADDR_LENGTH);
-      uint8_t receiver[4] = {0xAC, 0x67, 0xB2, 0x24};
+      uint8_t receiver[4] = {0x24, 0x6f, 0x28, 0x99};//24 6F 28 99
       memcpy(datagram.destination, receiver, ADDR_LENGTH);
       memcpy(datagram.message, &message->data.layer2, LAYER2_DATA_HEADERS_LEN);
       // const static int padding = 2;
@@ -118,18 +124,24 @@ void LoraMesh::receive() {
   // When buffer return 0, that means the packet have a size 0
 
   if (packet.totalLength == 0) {
+    // Serial.println("Everything is empty");
     return;
   }
   if (packet.datagram.type == CONTROL_MESSAGE) {
     control_data_type_t controlDataType;
     uint32_t source;
+    // Serial.println("Print Control message ");
+    // Serial.println("");
     memcpy(&controlDataType, packet.datagram.message,
            sizeof(control_data_type_t));
     memcpy(&source, packet.datagram.message + sizeof(control_data_type_t),
            sizeof(uint32_t));
     message = (message_t*)malloc(sizeof(packet.datagram.message));
     *message = newControlMessage(controlDataType, source);
-
+    Serial.println("Control Datas type: ");
+    Serial.printf("Type : %02X\n", message->data.control.type);
+    Serial.printf("Source : %02X\n", message->data.control.source);
+    
     Serial.println("Control Message received");
     router->handleControlMessage(message);
   } 
@@ -146,19 +158,21 @@ void LoraMesh::receive() {
 
     memcpy(&layer2Data, packet.datagram.message, LAYER2_DATA_HEADERS_LEN);
     layer2Data.payload = malloc(layer2Data.length);
+    // Serial.println("Depos do do 1 Memcpy");
     memcpy(layer2Data.payload,
-           packet.datagram.message + LAYER2_DATA_HEADERS_LEN - 2,
+           packet.datagram.message + LAYER2_DATA_HEADERS_LEN - padding,
            layer2Data.length);
     *message = newDataMessage(layer2Data);
     Serial.printf("Type: %02X\n", (message->data.layer2.type));
     Serial.printf("Lenght: %02X\n", message->data.layer2.length);
     Serial.print("Source: ");
     for (int i = 0; i < 6; i++) {
-      Serial.printf("%X02", message->data.layer2.source[i]);
+      Serial.printf("%02X", message->data.layer2.source[i]);
     }
     Serial.println("");
     Serial.print("Destination: ");
     for (int i = 0; i < 6; i++) {
+      Serial.printf("%02X", message->data.layer2.destination[i]);
     }
     Serial.println("");
     Serial.printf("Payload: ");
