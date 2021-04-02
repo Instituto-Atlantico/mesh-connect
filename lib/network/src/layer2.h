@@ -71,14 +71,14 @@ typedef struct {
 } ieee80211_qosdataframe_t;
 #define IEEE80211_QOSDATAFRAME_LEN sizeof(ieee80211_qosdataframe_t)
 
-typedef enum {
+typedef enum __attribute__((packed)) {
   ETHER_TYPE_UNKNOWN = 0,
   ETHER_TYPE_IPV4 = 0x0800,
   ETHER_TYPE_ARP = 0x0806,
   ETHER_TYPE_IPV6 = 0x86DD,
 } ether_type_t;
 
-typedef struct {
+typedef struct __attribute__((packed)) {
   ether_type_t type;
   uint8_t source[6];
   uint8_t destination[6];
