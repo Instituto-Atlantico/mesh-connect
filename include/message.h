@@ -26,13 +26,21 @@ typedef struct {
   } data;
 } message_t;
 
-inline message_t newDataMessage(layer2_data_t data1) {
-  return message_t{.type = DATA_MESSAGE, .data = {.layer2 = data1}};
+inline message_t newDataMessage(layer2_data_t data) {
+  return message_t{.type = DATA_MESSAGE, .data = {.layer2 = data}};
+};
+
+inline message_t newControlMessage(control_data_t controlData) {
+  return message_t{.type = CONTROL_MESSAGE, .data = {.control = controlData}};
 };
 
 inline message_t newControlMessage(control_data_type_t type, uint32_t source) {
   return message_t{.type = CONTROL_MESSAGE,
                    .data = {.control = {.type = type, .source = source}}};
 };
+
+#define MIN_MESSAGE_LENGTH                                                  \
+  sizeof(control_data_t) < LAYER2_DATA_HEADERS_LEN ? sizeof(control_data_t) \
+                                                   : LAYER2_DATA_HEADERS_LEN
 
 #endif
