@@ -1,11 +1,11 @@
 #include "gateway.h"
 #include <WiFi.h>
+#include <address.h>
 #include <esp_wifi.h>
 
 #define MAX_CONNECT_RETRIES 10
 #define CONNECT_DELAY_MILLS 500
 #define GW_ANNOUNCE_INTERVAL 5000
-#define GW_ADDRESS (uint32_t)(ESP.getEfuseMac() & 0xFFFFFFFF)
 
 bool shouldEnableGateway(const char* gwSSID, int scanAttempts) {
   for (int i = 0; i < scanAttempts; i++) {
@@ -62,6 +62,7 @@ wifi_node_status_t Gateway::getStatus() {
 }
 
 void Gateway::announce() {
-  auto message = newControlMessage(GW_ANNOUNCEMENT, GW_ADDRESS);
+  auto localAddress = getLocalMACAddressAsUint32();
+  auto message = newControlMessage(GW_ANNOUNCEMENT, localAddress);
   rxQueue->push(&message);
 }
