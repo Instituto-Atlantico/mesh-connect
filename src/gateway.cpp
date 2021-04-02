@@ -5,7 +5,7 @@
 
 #define MAX_CONNECT_RETRIES 10
 #define CONNECT_DELAY_MILLS 1000
-#define GW_ANNOUNCE_INTERVAL 5000
+#define GW_ANNOUNCE_INTERVAL 10000
 
 bool shouldEnableGateway(const char* gwSSID,
                          const char* gwPassword,
