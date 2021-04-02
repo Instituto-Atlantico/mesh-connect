@@ -28,6 +28,9 @@
 #ifndef GATEWAY_SSID
 #define GATEWAY_SSID "MeshConnectGWAP"
 #endif
+#ifndef GATEWAY_SSID_PASSWORD
+#define GATEWAY_SSID_PASSWORD nullptr
+#endif
 
 DataQueue<message_t>* wifiToLoraQueue;
 DataQueue<message_t>* loraToWifiQueue;
@@ -45,8 +48,9 @@ void setup() {
 
   mesh = new LoraMesh(wifiToLoraQueue, loraToWifiQueue, new Router());
 
-  if (shouldEnableGateway(GATEWAY_SSID)) {
-    wifi = new Gateway(GATEWAY_SSID, wifiToLoraQueue, loraToWifiQueue);
+  if (shouldEnableGateway(GATEWAY_SSID, GATEWAY_SSID_PASSWORD)) {
+    wifi = new Gateway(GATEWAY_SSID, GATEWAY_SSID_PASSWORD, wifiToLoraQueue,
+                       loraToWifiQueue);
   } else {
     wifi = new AccessPoint(ACCESS_POINT_SSID, wifiToLoraQueue, loraToWifiQueue);
   }

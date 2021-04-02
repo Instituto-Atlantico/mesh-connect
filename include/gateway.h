@@ -8,7 +8,9 @@
 
 #define SCAN_ATTEMPTS 3
 
-bool shouldEnableGateway(const char* gwSSID, int scanAttempts = SCAN_ATTEMPTS);
+bool shouldEnableGateway(const char* gwSSID,
+                         const char* gwPassword,
+                         int scanAttempts = SCAN_ATTEMPTS);
 
 class Gateway : public WifiNode {
  private:
@@ -18,6 +20,7 @@ class Gateway : public WifiNode {
 
  public:
   Gateway(const char* gwSSID,
+          const char* gwPassword,
           DataQueue<message_t>* rxQueue,
           DataQueue<message_t>* txQueue);
 

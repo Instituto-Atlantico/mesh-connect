@@ -7,7 +7,9 @@
 #define CONNECT_DELAY_MILLS 1000
 #define GW_ANNOUNCE_INTERVAL 5000
 
-bool shouldEnableGateway(const char* gwSSID, int scanAttempts) {
+bool shouldEnableGateway(const char* gwSSID,
+                         const char* gwPassword,
+                         int scanAttempts) {
   for (int i = 0; i < scanAttempts; i++) {
     auto count = WiFi.scanNetworks(false, true, false);
     if (count < 0)
@@ -16,7 +18,8 @@ bool shouldEnableGateway(const char* gwSSID, int scanAttempts) {
     for (int i = 0; i < count; i++) {
       auto foundSSID = WiFi.SSID(i);
       if (foundSSID.equals(gwSSID))
-        return WiFi.encryptionType(i) == WIFI_AUTH_OPEN;
+        return gwPassword != nullptr ||
+               WiFi.encryptionType(i) == WIFI_AUTH_OPEN;
     }
   }
 
@@ -32,6 +35,7 @@ static void announceTask(void* gwPointer) {
 }
 
 Gateway::Gateway(const char* gwSSID,
+                 const char* gwPassword,
                  DataQueue<message_t>* rxQueue,
                  DataQueue<message_t>* txQueue) {
   this->rxQueue = rxQueue;
@@ -39,7 +43,7 @@ Gateway::Gateway(const char* gwSSID,
 
   int attempts = MAX_CONNECT_RETRIES;
 
-  WiFi.begin(gwSSID, nullptr);
+  WiFi.begin(gwSSID, gwPassword);
   while (WiFi.status() != WL_CONNECTED) {
     delay(CONNECT_DELAY_MILLS);
     if (attempts-- == 0)
