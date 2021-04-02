@@ -12,6 +12,7 @@
 #define TX_POWER 20
 
 #define DATAGRAM_HEADER 5
+#define MIN_PACKET_LENGTH (HEADER_LENGTH + DATAGRAM_HEADER + MIN_MESSAGE_LENGTH)
 
 #define BOOT_LL1_DELAY_MICROS 500
 #define MAX_BOOT_LL1_RETRIES 10
@@ -47,7 +48,7 @@ LoraMesh::LoraMesh(DataQueue<message_t>* txQueue,
 
   layer2 = new LL2Class(layer1);
   layer2->setLocalAddress(getLocalMACAddress().c_str());
-  layer2->setInterval(10000);  // this value needs more research
+  layer2->setInterval(10000);  // 10 seconds between route updates
   layer2->init();
 
   xTaskCreatePinnedToCore(task, "LoraMeshTransceiver", 10000, this, 0,
@@ -62,15 +63,13 @@ void LoraMesh::transmit() {
     return;
 
   struct Datagram datagram;
-  int datagramsize = DATAGRAM_HEADER;
   datagram.type = message->type;
-  bool shouldTransmitt = false;
+  int datagramSize = 0;
 
   if (message->type == CONTROL_MESSAGE) {
     memcpy(datagram.destination, BROADCAST, ADDR_LENGTH);
     memcpy(datagram.message, &message->data.control, sizeof(control_data_t));
-    datagramsize += sizeof(control_data_t);
-    shouldTransmitt = true;
+    datagramSize += sizeof(control_data_t);
   }
 
   else if (message->type == DATA_MESSAGE) {
@@ -81,13 +80,12 @@ void LoraMesh::transmit() {
       memcpy(datagram.message, &message->data.layer2, LAYER2_DATA_HEADERS_LEN);
       memcpy((datagram.message + LAYER2_DATA_HEADERS_LEN - padding),
              message->data.layer2.payload, message->data.layer2.length);
-      datagramsize += LAYER2_DATA_HEADERS_LEN + message->data.layer2.length;
-      shouldTransmitt = true;
+      datagramSize += LAYER2_DATA_HEADERS_LEN + message->data.layer2.length;
     }
   }
 
-  if (shouldTransmitt) {
-    layer2->writeData(datagram, datagramsize);
+  if (datagramSize > 0) {
+    layer2->writeData(datagram, DATAGRAM_HEADER + datagramSize);
   }
 
   if (message->type == DATA_MESSAGE) {
@@ -99,7 +97,7 @@ void LoraMesh::transmit() {
 
 void LoraMesh::receive() {
   struct Packet packet = layer2->readData();
-  if (packet.totalLength <= (HEADER_LENGTH + MIN_MESSAGE_LENGTH)) {
+  if (packet.totalLength <= MIN_PACKET_LENGTH) {
     return;
   }
 

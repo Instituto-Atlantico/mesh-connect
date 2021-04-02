@@ -1,5 +1,6 @@
 #include "monitor.h"
 #include <Arduino.h>
+#include <address.h>
 
 #define OLED_SDA 4
 #define OLED_SCL 15
@@ -57,10 +58,12 @@ LogMonitor::LogMonitor(DataQueue<message_t>* wifiToLoraQueue,
 };
 
 void LogMonitor::updateInfo() {
-  Serial.println(F("==========================================================="));
+  Serial.println(F("========================================================"));
   Serial.print(wifi->getMode());
   Serial.print(F(" IP: "));
-  Serial.println(wifi->getIPAddress());
+  Serial.print(wifi->getIPAddress());
+  Serial.print(F(" MAC: "));
+  Serial.println(getLocalMACAddress());
 
   auto status = wifi->getStatus();
   Serial.print(F("WiFi Status - RX Frames: "));
@@ -76,5 +79,5 @@ void LogMonitor::updateInfo() {
   Serial.print(wifiToLoraQueue->getStatus().drops);
   Serial.print(F("/"));
   Serial.println(loraToWifiQueue->getStatus().drops);
-  Serial.println(F("==========================================================="));
+  Serial.println(F("========================================================"));
 }
