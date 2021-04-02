@@ -7,6 +7,7 @@
 #include "monitor.h"
 #include "wifinode.h"
 
+// Observability defines
 #ifndef MONITOR_CLASS
 #define MONITOR_CLASS LogMonitor
 #endif
@@ -17,16 +18,23 @@
 #define LED_TO_BLINK -1
 #endif
 
+// Operational defines
+#ifndef DATA_QUEUE_LENGTH
 #define DATA_QUEUE_LENGTH 10
+#endif
+#ifndef ACCESS_POINT_SSID
 #define ACCESS_POINT_SSID "MeshConnect"
+#endif
+#ifndef GATEWAY_SSID
 #define GATEWAY_SSID "MeshConnectGWAP"
+#endif
 
-Led led(LED_TO_BLINK);
 DataQueue<message_t>* wifiToLoraQueue;
 DataQueue<message_t>* loraToWifiQueue;
 WifiNode* wifi;
 LoraMesh* mesh;
 Monitor* monitor;
+Led led(LED_TO_BLINK);
 
 void setup() {
   Serial.begin(115200);
