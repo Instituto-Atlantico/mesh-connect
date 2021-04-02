@@ -14,7 +14,7 @@ bool shouldEnableGateway(const char* gwSSID,
 
 class Gateway : public WifiNode {
  private:
-  TaskHandle_t announceTaskHandle;
+  TaskHandle_t taskHandle;
   DataQueue<message_t>* rxQueue;
   DataQueue<message_t>* txQueue;
 
@@ -26,6 +26,8 @@ class Gateway : public WifiNode {
 
   wifi_node_status_t getStatus() override;
   String getMode() override { return "GW"; }
+
+  void routeToInternet();
 
   void announce();
 };

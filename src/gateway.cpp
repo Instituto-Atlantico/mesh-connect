@@ -26,11 +26,18 @@ bool shouldEnableGateway(const char* gwSSID,
   return false;
 }
 
-static void announceTask(void* gwPointer) {
+static void gwTask(void* gwPointer) {
   auto gw = (Gateway*)gwPointer;
+  auto lastAnnouce = -GW_ANNOUNCE_INTERVAL;
+
   for (;;) {
-    vTaskDelay(pdMS_TO_TICKS(GW_ANNOUNCE_INTERVAL));
-    gw->announce();
+    gw->routeToInternet();
+
+    auto now = millis();
+    if (millis() - lastAnnouce >= GW_ANNOUNCE_INTERVAL) {
+      gw->announce();
+      lastAnnouce = now;
+    }
   }
 }
 
@@ -50,8 +57,8 @@ Gateway::Gateway(const char* gwSSID,
       ESP.restart();
   }
 
-  xTaskCreatePinnedToCore(announceTask, "GWAnnouncer", 10000, this, 0,
-                          &announceTaskHandle, WIFI_TASKS_CORE);
+  xTaskCreatePinnedToCore(gwTask, "GWTask", 10000, this, 0, &taskHandle,
+                          WIFI_TASKS_CORE);
 
   WiFi.setAutoReconnect(true);
 }
@@ -69,4 +76,16 @@ void Gateway::announce() {
   auto localAddress = getLocalMACAddressAsUint32();
   auto message = newControlMessage(GW_ANNOUNCEMENT, localAddress);
   rxQueue->push(&message);
+}
+
+void Gateway::routeToInternet() {
+  auto message = txQueue->poll();
+  if (message == nullptr)
+    return;
+
+  auto l2Data = &message->data.layer2;
+  // TODO route l2Data to the Internet
+
+  free(l2Data->payload);
+  free(message);
 }
