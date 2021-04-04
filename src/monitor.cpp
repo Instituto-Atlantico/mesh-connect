@@ -24,8 +24,9 @@ void DisplayMonitor::updateInfo() {
   display->clearDisplay();
   display->setCursor(0, 0);
 
-  display->print("Mode: ");
-  display->println(wifi->getMode());
+  display->print(wifi->getMode());
+  display->print(F(" MAC: "));
+  display->println(getLocalMACAddress());
   display->print("IP: ");
   display->println(wifi->getIPAddress());
 

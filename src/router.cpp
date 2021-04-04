@@ -1,7 +1,7 @@
 #include "router.h"
 #include <esp_timer.h>
 
-#define GW_ANNOUNCEMENT_DEADLINE 60 * 10e6  // 60 seconds in microseconds
+#define GW_ANNOUNCEMENT_DEADLINE 6 * 10e6  // 1 minute in microseconds
 
 Router::Router() {
   lastGatewayAddress = 0;

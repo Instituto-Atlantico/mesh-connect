@@ -12,12 +12,11 @@
 #define TX_POWER 20
 
 #define DATAGRAM_HEADER 5
+#define ROUTE_UPDATE_INTERVAL 10000  // 10 seconds
 #define MIN_PACKET_LENGTH (HEADER_LENGTH + DATAGRAM_HEADER + MIN_MESSAGE_LENGTH)
 
 #define BOOT_LL1_DELAY_MICROS 500
 #define MAX_BOOT_LL1_RETRIES 10
-
-const static int padding = 2;
 
 static void task(void* pointer) {
   auto loraMesh = (LoraMesh*)pointer;
@@ -48,7 +47,7 @@ LoraMesh::LoraMesh(DataQueue<message_t>* txQueue,
 
   layer2 = new LL2Class(layer1);
   layer2->setLocalAddress(getLocalMACAddress().c_str());
-  layer2->setInterval(10000);  // 10 seconds between route updates
+  layer2->setInterval(ROUTE_UPDATE_INTERVAL);
   layer2->init();
 
   xTaskCreatePinnedToCore(task, "LoraMeshTransceiver", 10000, this, 0,
@@ -78,7 +77,7 @@ void LoraMesh::transmit() {
     if (destinationAddr > 0) {
       memcpy(datagram.destination, &destinationAddr, ADDR_LENGTH);
       memcpy(datagram.message, &message->data.layer2, LAYER2_DATA_HEADERS_LEN);
-      memcpy((datagram.message + LAYER2_DATA_HEADERS_LEN - padding),
+      memcpy(datagram.message + LAYER2_DATA_HEADERS_LEN,
              message->data.layer2.payload, message->data.layer2.length);
       datagramSize += LAYER2_DATA_HEADERS_LEN + message->data.layer2.length;
     }
@@ -115,7 +114,7 @@ void LoraMesh::receive() {
 
     layer2Data.payload = malloc(layer2Data.length);
     memcpy(layer2Data.payload,
-           packet.datagram.message + LAYER2_DATA_HEADERS_LEN - padding,
+           packet.datagram.message + LAYER2_DATA_HEADERS_LEN,
            layer2Data.length);
 
     message_t message = newDataMessage(layer2Data);

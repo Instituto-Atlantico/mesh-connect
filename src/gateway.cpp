@@ -2,6 +2,7 @@
 #include <WiFi.h>
 #include <address.h>
 #include <esp_wifi.h>
+#include <packetprint.h>
 
 #define MAX_CONNECT_RETRIES 10
 #define CONNECT_DELAY_MILLS 1000
@@ -84,7 +85,7 @@ void Gateway::routeToInternet() {
     return;
 
   auto l2Data = &message->data.layer2;
-  // TODO route l2Data to the Internet
+  printLayer2Data(l2Data);  // TODO route to Internet instead of print...
 
   free(l2Data->payload);
   free(message);
