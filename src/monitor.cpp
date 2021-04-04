@@ -27,22 +27,22 @@ void DisplayMonitor::updateInfo() {
   display->print(wifi->getMode());
   display->print(F(" MAC: "));
   display->println(getLocalMACAddress());
-  display->print("IP: ");
+  display->print(F("IP: "));
   display->println(wifi->getIPAddress());
 
   auto status = wifi->getStatus();
-  display->print("RX Frames: ");
+  display->print(F("RX Frames: "));
   display->println(status.rxFrames);
-  display->print("RX Errors: ");
+  display->print(F("RX Errors: "));
   display->println(status.rxErrors);
-  display->print("RSSI: ");
+  display->print(F("RSSI: "));
   display->println(status.rssi);
-  display->print("Len: ");
+  display->print(F("Len: "));
   display->println(status.length);
 
-  display->print("Drops (L/W): ");
+  display->print(F("Drops (L/W): "));
   display->print(wifiToLoraQueue->getStatus().drops);
-  display->print("/");
+  display->print(F("/"));
   display->print(loraToWifiQueue->getStatus().drops);
 
   display->display();
