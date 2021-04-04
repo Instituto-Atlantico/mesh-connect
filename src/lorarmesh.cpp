@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <Layer1_LoRa.h>
 #include <LoRaLayer2.h>
 #include <address.h>
