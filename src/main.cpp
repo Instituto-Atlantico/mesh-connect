@@ -14,8 +14,8 @@
 #ifndef MONITOR_UPDATE_INTERVAL
 #define MONITOR_UPDATE_INTERVAL 1000
 #endif
-#ifndef LED_TO_BLINK
-#define LED_TO_BLINK -1
+#ifndef BLINKI_LED
+#define BLINKI_LED -1
 #endif
 
 // Operational defines
@@ -37,7 +37,7 @@ DataQueue<message_t>* loraToWifiQueue;
 WifiNode* wifi;
 LoraMesh* mesh;
 Monitor* monitor;
-Led led(LED_TO_BLINK);
+Led led(BLINKI_LED);
 
 void setup() {
   Serial.begin(115200);

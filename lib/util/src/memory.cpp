@@ -4,10 +4,10 @@
 void printBuffer(void* buffer,
                  size_t size,
                  bool printSize,
-                 const char* begin,
+                 const char* tag,
                  const char* end) {
-  if (begin != nullptr)
-    Serial.print(begin);
+  if (tag != nullptr)
+    Serial.print(tag);
 
   for (int i = 0; i < size; i++) {
     Serial.printf("%02x", ((uint8_t*)buffer)[i]);

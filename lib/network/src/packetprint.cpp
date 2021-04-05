@@ -8,8 +8,8 @@ void printLayer2Data(layer2_data_t* layer2Data) {
   if (layer2Data == nullptr)
     return;
 
-  printBuffer(&layer2Data->destination, 6, false, "DST MAC: ", "\n");
-  printBuffer(&layer2Data->source, 6, false, "SRC MAC: ", "\n");
+  printBuffer(&layer2Data->destination, 6, false, "DST MAC: ");
+  printBuffer(&layer2Data->source, 6, false, "SRC MAC: ");
 
   switch (layer2Data->type) {
     case ETHER_TYPE_IPV4: {
@@ -23,7 +23,7 @@ void printLayer2Data(layer2_data_t* layer2Data) {
       size_t ipv4HeaderLength = IPV4_HEADER_LEN_MULTIPLIER * ipv4->ihl;
       size_t dataSize = layer2Data->length - ipv4HeaderLength;
       void* dataStart = ((uint8_t*)layer2Data->payload) + ipv4HeaderLength;
-      printBuffer(dataStart, dataSize, true, "DATA:\t", "\n");
+      printBuffer(dataStart, dataSize, true, "DATA:\t");
       break;
     }
     case ETHER_TYPE_IPV6:
