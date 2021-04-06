@@ -5,8 +5,8 @@
 #include <packetprint.h>
 
 #define MAX_CONNECT_RETRIES 10
-#define CONNECT_DELAY_MILLS 1000
-#define GW_ANNOUNCE_INTERVAL 10000
+#define CONNECT_DELAY_MILLS 1000    // 1 second
+#define GW_ANNOUNCE_INTERVAL 10000  // 10 seconds
 
 bool shouldEnableGateway(const char* gwSSID,
                          const char* gwPassword,
