@@ -8,21 +8,26 @@
 
 #define SCAN_ATTEMPTS 3
 
-bool shouldEnableGateway(const char* gwSSID, int scanAttempts = SCAN_ATTEMPTS);
+bool shouldEnableGateway(const char* gwSSID,
+                         const char* gwPassword,
+                         int scanAttempts = SCAN_ATTEMPTS);
 
 class Gateway : public WifiNode {
  private:
-  TaskHandle_t announceTaskHandle;
+  TaskHandle_t taskHandle;
   DataQueue<message_t>* rxQueue;
   DataQueue<message_t>* txQueue;
 
  public:
   Gateway(const char* gwSSID,
+          const char* gwPassword,
           DataQueue<message_t>* rxQueue,
           DataQueue<message_t>* txQueue);
 
   wifi_node_status_t getStatus() override;
   String getMode() override { return "GW"; }
+
+  void routeToInternet();
 
   void announce();
 };

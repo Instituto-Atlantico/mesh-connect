@@ -4,14 +4,14 @@
 #include <inttypes.h>
 
 typedef struct {
-  uint8_t version : 4;
   uint8_t ihl : 4;
-  uint8_t dscp : 6;
+  uint8_t version : 4;
   uint8_t ecn : 2;
+  uint8_t dscp : 6;
   uint16_t length : 16;
   uint16_t id : 16;
-  uint8_t flags : 3;
   uint16_t offset : 13;
+  uint8_t flags : 3;
   uint8_t ttl : 8;
   uint8_t protocol : 8;
   uint16_t checksum : 16;

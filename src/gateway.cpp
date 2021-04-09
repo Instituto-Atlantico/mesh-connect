@@ -1,13 +1,16 @@
 #include "gateway.h"
 #include <WiFi.h>
+#include <address.h>
 #include <esp_wifi.h>
+#include <packetprint.h>
 
 #define MAX_CONNECT_RETRIES 10
-#define CONNECT_DELAY_MILLS 500
-#define GW_ANNOUNCE_INTERVAL 5000
-#define GW_ADDRESS (uint32_t)(ESP.getEfuseMac() & 0xFFFFFFFF)
+#define CONNECT_DELAY_MILLS 1000    // 1 second
+#define GW_ANNOUNCE_INTERVAL 10000  // 10 seconds
 
-bool shouldEnableGateway(const char* gwSSID, int scanAttempts) {
+bool shouldEnableGateway(const char* gwSSID,
+                         const char* gwPassword,
+                         int scanAttempts) {
   for (int i = 0; i < scanAttempts; i++) {
     auto count = WiFi.scanNetworks(false, true, false);
     if (count < 0)
@@ -16,22 +19,31 @@ bool shouldEnableGateway(const char* gwSSID, int scanAttempts) {
     for (int i = 0; i < count; i++) {
       auto foundSSID = WiFi.SSID(i);
       if (foundSSID.equals(gwSSID))
-        return WiFi.encryptionType(i) == WIFI_AUTH_OPEN;
+        return gwPassword != nullptr ||
+               WiFi.encryptionType(i) == WIFI_AUTH_OPEN;
     }
   }
 
   return false;
 }
 
-static void announceTask(void* gwPointer) {
+static void gwTask(void* gwPointer) {
   auto gw = (Gateway*)gwPointer;
+  auto lastAnnouce = -GW_ANNOUNCE_INTERVAL;
+
   for (;;) {
-    vTaskDelay(pdMS_TO_TICKS(GW_ANNOUNCE_INTERVAL));
-    gw->announce();
+    gw->routeToInternet();
+
+    auto now = millis();
+    if (millis() - lastAnnouce >= GW_ANNOUNCE_INTERVAL) {
+      gw->announce();
+      lastAnnouce = now;
+    }
   }
 }
 
 Gateway::Gateway(const char* gwSSID,
+                 const char* gwPassword,
                  DataQueue<message_t>* rxQueue,
                  DataQueue<message_t>* txQueue) {
   this->rxQueue = rxQueue;
@@ -39,15 +51,15 @@ Gateway::Gateway(const char* gwSSID,
 
   int attempts = MAX_CONNECT_RETRIES;
 
-  WiFi.begin(gwSSID, nullptr);
+  WiFi.begin(gwSSID, gwPassword);
   while (WiFi.status() != WL_CONNECTED) {
     delay(CONNECT_DELAY_MILLS);
     if (attempts-- == 0)
       ESP.restart();
   }
 
-  xTaskCreatePinnedToCore(announceTask, "GWAnnouncer", 10000, this, 0,
-                          &announceTaskHandle, WIFI_TASKS_CORE);
+  xTaskCreatePinnedToCore(gwTask, "GWTask", 10000, this, 0, &taskHandle,
+                          WIFI_TASKS_CORE);
 
   WiFi.setAutoReconnect(true);
 }
@@ -62,6 +74,19 @@ wifi_node_status_t Gateway::getStatus() {
 }
 
 void Gateway::announce() {
-  auto message = newControlMessage(GW_ANNOUNCEMENT, GW_ADDRESS);
+  auto localAddress = getLocalMACAddressAsUint32();
+  auto message = newControlMessage(GW_ANNOUNCEMENT, localAddress);
   rxQueue->push(&message);
+}
+
+void Gateway::routeToInternet() {
+  auto message = txQueue->poll();
+  if (message == nullptr)
+    return;
+
+  auto l2Data = &message->data.layer2;
+  printLayer2Data(l2Data);  // TODO route to Internet instead of print...
+
+  free(l2Data->payload);
+  free(message);
 }
