@@ -46,14 +46,14 @@ void setup() {
   wifiToLoraQueue = new DataQueue<message_t>(DATA_QUEUE_LENGTH);
   loraToWifiQueue = new DataQueue<message_t>(DATA_QUEUE_LENGTH);
 
-  mesh = new LoraMesh(wifiToLoraQueue, loraToWifiQueue, new Router());
+  // mesh = new LoraMesh(wifiToLoraQueue, loraToWifiQueue, new Router());
 
-  if (shouldEnableGateway(GATEWAY_SSID, GATEWAY_SSID_PASSWORD)) {
-    wifi = new Gateway(GATEWAY_SSID, GATEWAY_SSID_PASSWORD, wifiToLoraQueue,
-                       loraToWifiQueue);
-  } else {
-    wifi = new AccessPoint(ACCESS_POINT_SSID, wifiToLoraQueue, loraToWifiQueue);
-  }
+  // if (shouldEnableGateway(GATEWAY_SSID, GATEWAY_SSID_PASSWORD)) {
+  wifi = new Gateway(GATEWAY_SSID, GATEWAY_SSID_PASSWORD, wifiToLoraQueue,
+                        loraToWifiQueue);
+  // } else {
+  //   wifi = new AccessPoint(ACCESS_POINT_SSID, wifiToLoraQueue, loraToWifiQueue);
+  // }
 
   monitor = new MONITOR_CLASS(wifiToLoraQueue, loraToWifiQueue, wifi, mesh);
 
@@ -65,4 +65,6 @@ void loop() {
   monitor->updateInfo();
   led.off();
   delay(MONITOR_UPDATE_INTERVAL);
+  Serial.println(wifi->getIPAddress());
+  wifi->sendPacket();
 }
