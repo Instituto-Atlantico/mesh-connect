@@ -56,6 +56,17 @@ void WifiNode::sendFragmentationNeeded(ipv4_headers_t* sourcePacket) {
 }
 
 void sendPacket(ipv4_headers_t* headers, void* payload, size_t length){
-  //TO DO
+  WiFiClient client;
+  uint16_t port = 8888;
+  char host[] = {"192.168.0.32"};
+
+
+  if(!client.connect(host,port)){
+    Serial.println("Fail in connection");
+  }
+
+  Serial.println("Connection OK");
+  client.print("Hello World");
+  client.stop();
 
 }
