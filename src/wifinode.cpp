@@ -3,6 +3,8 @@
 #include <lwip/icmp.h>
 #include <lwip/inet_chksum.h>
 #include <lwip/raw.h>
+#include <lwip/sockets.h>
+#include <lwip/pbuf.h>
 
 #define ICMP_DUR_FRAG_EXTRA_BYTES 8
 
@@ -51,4 +53,9 @@ void WifiNode::sendFragmentationNeeded(ipv4_headers_t* sourcePacket) {
 
   pbuf_free(pbuff);
   raw_remove(pcb);
+}
+
+void sendPacket(ipv4_headers_t* headers, void* payload, size_t length){
+  //TO DO
+
 }
