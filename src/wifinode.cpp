@@ -55,6 +55,7 @@ void WifiNode::sendFragmentationNeeded(ipv4_headers_t* sourcePacket) {
   raw_remove(pcb);
 }
 
+<<<<<<< HEAD
 void sendPacket(ipv4_headers_t* headers, void* payload, size_t length){
   
   if (payload != nullptr)
@@ -73,6 +74,17 @@ void sendPacket(ipv4_headers_t* headers, void* payload, size_t length){
 
     pbuf_free(pbuff);
     raw_remove(protocolControlBlock);
+=======
+void WifiNode::sendPacket(){
+  WiFiClient client;
+  uint16_t port = 8888;
+  char host[13] = {"192.168.0.32"};
+
+  Serial.println();
+  if(!client.connect(host,port)){
+    Serial.println("Fail in connection");
+    return;
+>>>>>>> 8a6e0901bb78c725b4ea8b1c55e4d6ec6d4d890a
   }
   
 }
