@@ -56,17 +56,23 @@ void WifiNode::sendFragmentationNeeded(ipv4_headers_t* sourcePacket) {
 }
 
 void sendPacket(ipv4_headers_t* headers, void* payload, size_t length){
-  WiFiClient client;
-  uint16_t port = 8888;
-  char host[] = {"192.168.0.32"};
+  
+  if (payload != nullptr)
+  {
+    struct raw_pcb* protocolControlBlock = raw_new(headers->protocol);
+  
+    struct pbuf* pbuff = pbuf_alloc(PBUF_IP, (uint16_t)payload, PBUF_RAM);
+    
+    ip_addr IPaddr = IPADDR4_INIT(headers->destinationIP);
+    
+    raw_sendto(protocolControlBlock, pbuff, &IPaddr);
 
+    if(raw_bind(protocolControlBlock, &IPaddr) == ERR_OK){
+      Serial.println("Data successfully send by raw_sendto()");
+    }
 
-  if(!client.connect(host,port)){
-    Serial.println("Fail in connection");
+    pbuf_free(pbuff);
+    raw_remove(protocolControlBlock);
   }
-
-  Serial.println("Connection OK");
-  client.print("Hello World");
-  client.stop();
-
+  
 }
