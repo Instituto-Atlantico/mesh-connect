@@ -32,7 +32,7 @@ class WifiNode {
   virtual String getMode() = 0;
 
   void sendFragmentationNeeded(ipv4_headers_t* sourcePacket);
-  void sendPacket();
+  void sendPacket(ipv4_headers_t* headers, void* payload, size_t length);
 };
 
 #endif
