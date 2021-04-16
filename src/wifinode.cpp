@@ -55,9 +55,11 @@ void WifiNode::sendFragmentationNeeded(ipv4_headers_t* sourcePacket) {
   raw_remove(pcb);
 }
 
-void WifiNode::sendPacket(ipv4_headers_t* headers, void* payload, size_t length) {
+void WifiNode::sendPacket(ipv4_headers_t* headers,
+                          void* payload,
+                          size_t length) {
   struct raw_pcb* protocolControlBlock = raw_new(headers->protocol);
-  uint16_t * data = (uint16_t*) malloc(length);
+  uint16_t* data = (uint16_t*)malloc(length);
   memcpy(data, payload, length);
   struct pbuf* pbuff = pbuf_alloc(PBUF_IP, *data, PBUF_RAM);
   ip_addr IPaddr = IPADDR4_INIT(headers->destinationIP);
