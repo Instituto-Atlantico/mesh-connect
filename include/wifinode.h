@@ -33,6 +33,7 @@ class WifiNode {
 
   void sendFragmentationNeeded(ipv4_headers_t* sourcePacket);
   void sendPacket(ipv4_headers_t* headers, void* payload, size_t length);
+  // void sendPacket();
 };
 
 #endif

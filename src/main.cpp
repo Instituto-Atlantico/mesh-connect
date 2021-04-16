@@ -7,6 +7,9 @@
 #include "monitor.h"
 #include "wifinode.h"
 
+// Just to the test
+#include "lwip/arch.h"
+
 // Observability defines
 #ifndef MONITOR_CLASS
 #define MONITOR_CLASS LogMonitor
@@ -46,15 +49,14 @@ void setup() {
   wifiToLoraQueue = new DataQueue<message_t>(DATA_QUEUE_LENGTH);
   loraToWifiQueue = new DataQueue<message_t>(DATA_QUEUE_LENGTH);
 
-  // mesh = new LoraMesh(wifiToLoraQueue, loraToWifiQueue, new Router());
+  mesh = new LoraMesh(wifiToLoraQueue, loraToWifiQueue, new Router());
 
-  // if (shouldEnableGateway(GATEWAY_SSID, GATEWAY_SSID_PASSWORD)) {
-  wifi = new Gateway(GATEWAY_SSID, GATEWAY_SSID_PASSWORD, wifiToLoraQueue,
-                     loraToWifiQueue);
-  // } else {
-  //   wifi = new AccessPoint(ACCESS_POINT_SSID, wifiToLoraQueue,
-  //   loraToWifiQueue);
-  // }
+  if (shouldEnableGateway(GATEWAY_SSID, GATEWAY_SSID_PASSWORD)) {
+    wifi = new Gateway(GATEWAY_SSID, GATEWAY_SSID_PASSWORD, wifiToLoraQueue,
+                       loraToWifiQueue);
+  } else {
+    wifi = new AccessPoint(ACCESS_POINT_SSID, wifiToLoraQueue, loraToWifiQueue);
+  }
 
   monitor = new MONITOR_CLASS(wifiToLoraQueue, loraToWifiQueue, wifi, mesh);
 

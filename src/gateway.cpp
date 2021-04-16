@@ -83,9 +83,12 @@ void Gateway::routeToInternet() {
   auto message = txQueue->poll();
   if (message == nullptr)
     return;
-
   auto l2Data = &message->data.layer2;
-  printLayer2Data(l2Data);  // TODO route to Internet instead of print...
+  auto ipv4 = (ipv4_headers_t*)l2Data->payload;
+  void* payload = malloc(l2Data->length);
+  memcpy(payload, l2Data->payload, l2Data->length);
+  sendPacket(ipv4, payload,l2Data->length);
+  
 
   free(l2Data->payload);
   free(message);
