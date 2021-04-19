@@ -7,9 +7,6 @@
 #include "monitor.h"
 #include "wifinode.h"
 
-// Just to the test
-#include "lwip/arch.h"
-
 // Observability defines
 #ifndef MONITOR_CLASS
 #define MONITOR_CLASS LogMonitor
