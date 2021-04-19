@@ -58,7 +58,8 @@ void WifiNode::sendFragmentationNeeded(ipv4_headers_t* sourcePacket) {
 void WifiNode::sendPacket(ipv4_headers_t* headers,
                           void* payload,
                           size_t length) {
-  if(headers->protocol != IP_PROTO_ICMP || headers->protocol != IP_PROTO_UDP || headers->protocol != IP_PROTO_TCP){
+  if (headers->protocol != IP_PROTO_ICMP || headers->protocol != IP_PROTO_UDP ||
+      headers->protocol != IP_PROTO_TCP) {
     return;
   }
   struct raw_pcb* protocolControlBlock = raw_new(headers->protocol);
