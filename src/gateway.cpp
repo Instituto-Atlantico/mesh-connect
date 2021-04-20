@@ -84,12 +84,18 @@ void Gateway::routeToInternet() {
   auto message = txQueue->poll();
   if (message == nullptr)
     return;
+
   auto l2Data = &message->data.layer2;
-  auto ipv4 = (ipv4_headers_t*)l2Data->payload;
-  size_t ipv4HeaderLength = IHL_CALC * ipv4->ihl;
-  void* dataStart = ((uint8_t*)l2Data->payload) + ipv4HeaderLength;
-  size_t dataSize = l2Data->length - ipv4HeaderLength;
-  sendPacket(ipv4, dataStart, dataSize);
+
+  if (l2Data->type == ETHER_TYPE_IPV4) {
+    auto ipv4 = (ipv4_headers_t*)l2Data->payload;
+    size_t ipv4HeaderLength = IHL_CALC * ipv4->ihl;
+    void* dataStart = ((uint8_t*)l2Data->payload) + ipv4HeaderLength;
+
+    size_t dataSize = l2Data->length - ipv4HeaderLength;
+
+    sendPacket(ipv4, dataStart, dataSize);
+  }
 
   free(l2Data->payload);
   free(message);
