@@ -58,17 +58,17 @@ void WifiNode::sendFragmentationNeeded(ipv4_headers_t* sourcePacket) {
 void WifiNode::sendPacket(ipv4_headers_t* headers,
                           void* payload,
                           size_t length) {
-  if (headers->protocol != IP_PROTO_ICMP || headers->protocol != IP_PROTO_UDP ||
+  if (headers->protocol != IP_PROTO_ICMP && headers->protocol != IP_PROTO_UDP &&
       headers->protocol != IP_PROTO_TCP) {
     return;
   }
   struct raw_pcb* protocolControlBlock = raw_new(headers->protocol);
-  uint16_t* data = (uint16_t*)malloc(length);
-  memcpy(data, payload, length);
   struct pbuf* pbuff = pbuf_alloc(PBUF_IP, (uint16_t)length, PBUF_RAM);
-  ip_addr IPaddr = IPADDR4_INIT(headers->destinationIP);
-
-  raw_sendto(protocolControlBlock, pbuff, &IPaddr);
+  if (pbuff != nullptr && pbuff->len == pbuff->tot_len && pbuff->next == NULL) {
+    memcpy(pbuff->payload, payload, length);
+    ip_addr IPaddr = IPADDR4_INIT(headers->destinationIP);
+    raw_sendto(protocolControlBlock, pbuff, &IPaddr);
+  }
 
   pbuf_free(pbuff);
   raw_remove(protocolControlBlock);
