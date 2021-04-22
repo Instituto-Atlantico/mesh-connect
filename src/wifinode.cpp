@@ -64,8 +64,7 @@ void WifiNode::sendPacket(ipv4_headers_t* headers,
   }
   struct raw_pcb* protocolControlBlock = raw_new(headers->protocol);
   struct pbuf* pbuff = pbuf_alloc(PBUF_IP, (uint16_t)length, PBUF_RAM);
-  if (pbuff != nullptr && pbuff->len == pbuff->tot_len &&
-      pbuff->next == NULL) {
+  if (pbuff != nullptr && pbuff->len == pbuff->tot_len && pbuff->next == NULL) {
     memcpy(pbuff->payload, payload, length);
     ip_addr IPaddr = IPADDR4_INIT(headers->destinationIP);
     raw_sendto(protocolControlBlock, pbuff, &IPaddr);
