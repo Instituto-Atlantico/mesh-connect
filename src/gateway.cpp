@@ -7,6 +7,7 @@
 #define MAX_CONNECT_RETRIES 10
 #define CONNECT_DELAY_MILLS 1000    // 1 second
 #define GW_ANNOUNCE_INTERVAL 10000  // 10 seconds
+#define IHL_CALC_SIZE 4
 
 bool shouldEnableGateway(const char* gwSSID,
                          const char* gwPassword,
@@ -85,7 +86,16 @@ void Gateway::routeToInternet() {
     return;
 
   auto l2Data = &message->data.layer2;
-  printLayer2Data(l2Data);  // TODO route to Internet instead of print...
+
+  if (l2Data->type == ETHER_TYPE_IPV4) {
+    auto ipv4 = (ipv4_headers_t*)l2Data->payload;
+    size_t ipv4HeaderLength = IHL_CALC_SIZE * ipv4->ihl;
+    void* dataStart = ((uint8_t*)l2Data->payload) + ipv4HeaderLength;
+
+    size_t dataSize = l2Data->length - ipv4HeaderLength;
+
+    sendPacket(ipv4, dataStart, dataSize);
+  }
 
   free(l2Data->payload);
   free(message);
