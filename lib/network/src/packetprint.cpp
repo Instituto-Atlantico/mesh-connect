@@ -2,8 +2,6 @@
 #include <memory.h>
 #include <packetprint.h>
 
-#define IPV4_HEADER_LEN_MULTIPLIER 4
-
 void printLayer2Data(layer2_data_t* layer2Data) {
   if (layer2Data == nullptr)
     return;
@@ -13,17 +11,7 @@ void printLayer2Data(layer2_data_t* layer2Data) {
 
   switch (layer2Data->type) {
     case ETHER_TYPE_IPV4: {
-      ipv4_headers_t* ipv4 = (ipv4_headers_t*)layer2Data->payload;
-      Serial.printf("DST IP:\t%s\n",
-                    IPAddress(ipv4->destinationIP).toString().c_str());
-      Serial.printf("SRC IP:\t%s\n",
-                    IPAddress(ipv4->sourceIP).toString().c_str());
-      Serial.printf("PROTO:\t%d\n", ipv4->protocol);
-
-      size_t ipv4HeaderLength = IPV4_HEADER_LEN_MULTIPLIER * ipv4->ihl;
-      size_t dataSize = layer2Data->length - ipv4HeaderLength;
-      void* dataStart = ((uint8_t*)layer2Data->payload) + ipv4HeaderLength;
-      printBuffer(dataStart, dataSize, true, "DATA:\t");
+      printIPv4Data((ipv4_headers_t*)layer2Data->payload, layer2Data->length);
       break;
     }
     case ETHER_TYPE_IPV6:
@@ -32,4 +20,18 @@ void printLayer2Data(layer2_data_t* layer2Data) {
       Serial.printf("Unsupported ether type: 0x%04X\n", layer2Data->type);
       break;
   }
+}
+
+void printIPv4Data(ipv4_headers_t* ipv4Data, size_t size) {
+  Serial.printf("DST IP:\t%s\n",
+                IPAddress(ipv4Data->destinationIP).toString().c_str());
+  Serial.printf("SRC IP:\t%s\n",
+                IPAddress(ipv4Data->sourceIP).toString().c_str());
+  Serial.printf("PROTO:\t%d\n", ipv4Data->protocol);
+
+  size_t ipv4HeaderLength = getIPv4HeaderLength(ipv4Data);
+  size_t dataSize = size - ipv4HeaderLength;
+  void* dataStart = ((uint8_t*)ipv4Data) + ipv4HeaderLength;
+
+  printBuffer(dataStart, dataSize, true, "DATA:\t");
 }

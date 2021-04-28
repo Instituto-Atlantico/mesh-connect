@@ -5,6 +5,7 @@
 #include "gateway.h"
 #include "loramesh.h"
 #include "monitor.h"
+#include "router.h"
 #include "wifinode.h"
 
 // Observability defines
@@ -32,10 +33,9 @@
 #define GATEWAY_SSID_PASSWORD nullptr
 #endif
 
-DataQueue<message_t>* wifiToLoraQueue;
-DataQueue<message_t>* loraToWifiQueue;
 WifiNode* wifi;
 LoraMesh* mesh;
+Router* router;
 Monitor* monitor;
 Led led(BLINK_LED);
 
@@ -43,19 +43,23 @@ void setup() {
   Serial.begin(115200);
   led.on();
 
-  wifiToLoraQueue = new DataQueue<message_t>(DATA_QUEUE_LENGTH);
-  loraToWifiQueue = new DataQueue<message_t>(DATA_QUEUE_LENGTH);
+  auto loraTXQueue = new DataQueue<message_t>(DATA_QUEUE_LENGTH);
+  auto loraRXQueue = new DataQueue<message_t>(DATA_QUEUE_LENGTH);
+  mesh = new LoraMesh(loraTXQueue, loraRXQueue);
 
-  mesh = new LoraMesh(wifiToLoraQueue, loraToWifiQueue, new Router());
+  auto wifiTXQueue = new DataQueue<message_t>(DATA_QUEUE_LENGTH);
+  auto wifiRXQueue = new DataQueue<message_t>(DATA_QUEUE_LENGTH);
 
   if (shouldEnableGateway(GATEWAY_SSID, GATEWAY_SSID_PASSWORD)) {
-    wifi = new Gateway(GATEWAY_SSID, GATEWAY_SSID_PASSWORD, wifiToLoraQueue,
-                       loraToWifiQueue);
+    wifi = new Gateway(GATEWAY_SSID, GATEWAY_SSID_PASSWORD, wifiTXQueue,
+                       wifiRXQueue);
+    router = new GatewayRouter(wifi, mesh);
   } else {
-    wifi = new AccessPoint(ACCESS_POINT_SSID, wifiToLoraQueue, loraToWifiQueue);
+    wifi = new AccessPoint(ACCESS_POINT_SSID, wifiTXQueue, wifiRXQueue);
+    router = new AcessPointRouter(wifi, mesh);
   }
 
-  monitor = new MONITOR_CLASS(wifiToLoraQueue, loraToWifiQueue, wifi, mesh);
+  monitor = new MONITOR_CLASS(loraTXQueue, loraRXQueue, wifi, mesh);  // FIXME
 
   led.off();
 }

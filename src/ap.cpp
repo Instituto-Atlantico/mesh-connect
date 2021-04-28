@@ -1,4 +1,5 @@
 #include "ap.h"
+#include <layer2.h>
 #include <layer3.h>
 #include <metrics.h>
 
@@ -16,28 +17,16 @@ static void receiveCallback(void* buf, wifi_promiscuous_pkt_type_t type) {
   apInstance->receive((wifi_promiscuous_pkt_t*)buf);
 }
 
-static void transmitTask(void* pointer) {
-  auto ap = (AccessPoint*)pointer;
-  for (;;) {
-    ap->transmit();
-  }
-}
-
 AccessPoint::AccessPoint(const char* ssid,
-                         DataQueue<message_t>* rxQueue,
-                         DataQueue<message_t>* txQueue) {
+                         DataQueue<message_t>* txQueue,
+                         DataQueue<message_t>* rxQueue)
+    : WifiNode(txQueue, rxQueue) {
   if (apInstance != nullptr)
     throw "Cannot have multiple AccessPoint instances";
   apInstance = this;
 
-  this->rxQueue = rxQueue;
-  this->txQueue = txQueue;
-
   if (!WiFi.softAP(ssid, nullptr, DEFAULT_CHANNEL, false, MAX_CLIENTS))
     throw "Cannot start AP";
-
-  xTaskCreatePinnedToCore(transmitTask, "WiFiTransmitter", 10000, this, 0,
-                          &transmitTaskHandle, WIFI_TASKS_CORE);
 
   ESP_ERROR_CHECK(esp_wifi_set_promiscuous_filter(&promiscuousFilter));
   ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(&receiveCallback));
@@ -63,9 +52,13 @@ void AccessPoint::receive(wifi_promiscuous_pkt_t* packet) {
     return;
 
   auto ipv4 = (ipv4_headers_t*)l2data.payload;
-  if (ipv4->destinationIP == 0 || ipv4->destinationIP == getIPAddress()) {
+  if (ipv4->destinationIP == 0 || ipv4->destinationIP == getIPAddress() ||
+      isMulticast(ipv4->destinationIP)) {
     return;
   }
+
+  if (ipv4->protocol != TCP && ipv4->protocol != UDP && ipv4->protocol != ICMP)
+    return;
 
   // drop frame if it's larger than MTU
   if (l2data.length > WIFI_NODE_MTU) {
@@ -80,22 +73,27 @@ void AccessPoint::receive(wifi_promiscuous_pkt_t* packet) {
     return;
   }
   memcpy(payload, l2data.payload, l2data.length);
-  l2data.payload = payload;
 
   // send to the queue
-  auto message = newDataMessage(l2data);
+  auto message = newIPv4DataMessage(
+      ipv4_datagram_t{.payload = payload, .size = (uint8_t)l2data.length});
   rxQueue->push(&message);
 }
 
 void AccessPoint::transmit() {
   auto message = txQueue->poll();
-  if (message == nullptr || message->type == CONTROL_MESSAGE)
-    goto end;
+  if (message == nullptr || message->type != IPV4_DATAGRAM_MESSAGE) {
+    free(message);
+    return;
+  }
 
-  // TODO send over 802.11
+  sendPacket((ipv4_headers_t*)message->data.ipv4Datagram.payload,
+             message->data.ipv4Datagram.size, true);
 
-  // Freeing data that was alocated at LoRa reception
-  free(message->data.layer2.payload);
-end:
+  free(message->data.ipv4Datagram.payload);
   free(message);
+}
+
+String AccessPoint::getMode() {
+  return "AP";
 }

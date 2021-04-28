@@ -85,7 +85,6 @@ typedef struct __attribute__((packed)) {
   uint16_t length;
   void* payload;
 } layer2_data_t;
-#define LAYER2_DATA_HEADERS_LEN (sizeof(layer2_data_t) - sizeof(void*))
 
 layer2_data_t getLayer2Data(void* buffer, uint16_t length);
 

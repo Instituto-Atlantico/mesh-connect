@@ -8,8 +8,21 @@
 
 #define ICMP_DUR_FRAG_EXTRA_BYTES 8
 
-WifiNode::WifiNode() {
+static void wifiTask(void* pointer) {
+  auto wifiNode = (WifiNode*)pointer;
+  for (;;) {
+    wifiNode->transmit();
+  }
+}
+
+WifiNode::WifiNode(DataQueue<message_t>* txQueue,
+                   DataQueue<message_t>* rxQueue) {
   memset(&status, 0, sizeof(status));
+  this->txQueue = txQueue;
+  this->rxQueue = rxQueue;
+
+  xTaskCreatePinnedToCore(wifiTask, "WifiNode", 10000, this, 0, &wifiTaskHandle,
+                          WIFI_TASKS_CORE);
 }
 
 IPAddress WifiNode::getIPAddress() {
@@ -27,10 +40,19 @@ wifi_node_status_t WifiNode::getStatus() {
   return this->status;
 }
 
+DataQueue<message_t>* WifiNode::getTXQueue() {
+  return this->txQueue;
+}
+
+DataQueue<message_t>* WifiNode::getRXQueue() {
+  return this->rxQueue;
+}
+
 void WifiNode::sendFragmentationNeeded(ipv4_headers_t* sourcePacket) {
   struct raw_pcb* pcb = raw_new(IP_PROTO_ICMP);
 
-  size_t ipv4DataSize = 4 * sourcePacket->ihl + ICMP_DUR_FRAG_EXTRA_BYTES;
+  size_t ipv4DataSize =
+      getIPv4HeaderLength(sourcePacket) + ICMP_DUR_FRAG_EXTRA_BYTES;
   size_t size = sizeof(struct icmp_echo_hdr) + ipv4DataSize;
 
   struct pbuf* pbuff = pbuf_alloc(PBUF_IP, (uint16_t)size, PBUF_RAM);
@@ -56,20 +78,29 @@ void WifiNode::sendFragmentationNeeded(ipv4_headers_t* sourcePacket) {
 }
 
 void WifiNode::sendPacket(ipv4_headers_t* headers,
-                          void* payload,
-                          size_t length) {
+                          size_t size,
+                          bool keepLocalIP) {
   if (headers->protocol != IP_PROTO_ICMP && headers->protocol != IP_PROTO_UDP &&
       headers->protocol != IP_PROTO_TCP) {
     return;
   }
-  struct raw_pcb* protocolControlBlock = raw_new(headers->protocol);
-  struct pbuf* pbuff = pbuf_alloc(PBUF_IP, (uint16_t)length, PBUF_RAM);
+
+  auto headerSize = getIPv4HeaderLength(headers);
+  auto payloadSize = size - headerSize;
+
+  struct raw_pcb* pcb = raw_new(headers->protocol);
+  struct pbuf* pbuff = pbuf_alloc(PBUF_IP, (u16_t)payloadSize, PBUF_RAM);
+
   if (pbuff != nullptr && pbuff->len == pbuff->tot_len && pbuff->next == NULL) {
-    memcpy(pbuff->payload, payload, length);
-    ip_addr IPaddr = IPADDR4_INIT(headers->destinationIP);
-    raw_sendto(protocolControlBlock, pbuff, &IPaddr);
+    memcpy(pbuff->payload, ((uint8_t*)headers) + headerSize, payloadSize);
+
+    ip_addr destinationIP = IPADDR4_INIT(headers->destinationIP);
+    if (keepLocalIP)
+      pcb->local_ip = IPADDR4_INIT(headers->sourceIP);
+
+    raw_sendto(pcb, pbuff, &destinationIP);
   }
 
   pbuf_free(pbuff);
-  raw_remove(protocolControlBlock);
+  raw_remove(pcb);
 }

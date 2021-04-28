@@ -2,12 +2,10 @@
 #include <WiFi.h>
 #include <address.h>
 #include <esp_wifi.h>
-#include <packetprint.h>
 
 #define MAX_CONNECT_RETRIES 10
 #define CONNECT_DELAY_MILLS 1000    // 1 second
 #define GW_ANNOUNCE_INTERVAL 10000  // 10 seconds
-#define IHL_CALC_SIZE 4
 
 bool shouldEnableGateway(const char* gwSSID,
                          const char* gwPassword,
@@ -28,28 +26,47 @@ bool shouldEnableGateway(const char* gwSSID,
   return false;
 }
 
-static void gwTask(void* gwPointer) {
+static void announceTask(void* gwPointer) {
   auto gw = (Gateway*)gwPointer;
-  auto lastAnnouce = -GW_ANNOUNCE_INTERVAL;
-
   for (;;) {
-    gw->routeToInternet();
-
-    auto now = millis();
-    if (millis() - lastAnnouce >= GW_ANNOUNCE_INTERVAL) {
-      gw->announce();
-      lastAnnouce = now;
-    }
+    vTaskDelay(pdMS_TO_TICKS(GW_ANNOUNCE_INTERVAL));
+    gw->announce();
   }
+}
+
+static u8_t readIncomingPacket(void* arg,
+                               struct raw_pcb* pcb,
+                               struct pbuf* pbuff,
+                               const ip_addr_t* addr) {
+  Gateway* gateway = (Gateway*)arg;
+  gateway->receive(pcb, pbuff, addr);
+  pbuf_free(pbuff);
+  return 1;
+}
+
+static void newPCB(struct raw_pcb** pcb, u8_t protocol, Gateway* gateway) {
+  auto newPcb = raw_new(protocol);
+  if (newPcb == nullptr) {
+    printf("Could not allocate PCB\n");
+    ESP.restart();
+  }
+
+  *pcb = newPcb;
+
+  auto err = raw_bind(newPcb, IP4_ADDR_ANY);
+  if (err != ERR_OK) {
+    printf("Could bind PCB to all IPv4 addresses\n");
+    ESP.restart();
+  }
+
+  raw_recv(newPcb, readIncomingPacket, gateway);
 }
 
 Gateway::Gateway(const char* gwSSID,
                  const char* gwPassword,
-                 DataQueue<message_t>* rxQueue,
-                 DataQueue<message_t>* txQueue) {
-  this->rxQueue = rxQueue;
-  this->txQueue = txQueue;
-
+                 DataQueue<message_t>* txQueue,
+                 DataQueue<message_t>* rxQueue)
+    : WifiNode(txQueue, rxQueue) {
   int attempts = MAX_CONNECT_RETRIES;
 
   WiFi.begin(gwSSID, gwPassword);
@@ -59,10 +76,14 @@ Gateway::Gateway(const char* gwSSID,
       ESP.restart();
   }
 
-  xTaskCreatePinnedToCore(gwTask, "GWTask", 10000, this, 0, &taskHandle,
-                          WIFI_TASKS_CORE);
+  xTaskCreatePinnedToCore(announceTask, "GWAnnounceTask", 10000, this, 0,
+                          &taskHandle, WIFI_TASKS_CORE);
 
   WiFi.setAutoReconnect(true);
+
+  newPCB(&icmpPcb, ICMP, this);
+  newPCB(&tcpPcb, TCP, this);
+  newPCB(&udpPcb, UDP, this);
 }
 
 wifi_node_status_t Gateway::getStatus() {
@@ -75,28 +96,47 @@ wifi_node_status_t Gateway::getStatus() {
 }
 
 void Gateway::announce() {
-  auto localAddress = getLocalMACAddressAsUint32();
-  auto message = newControlMessage(GW_ANNOUNCEMENT, localAddress);
+  auto message = newControlMessage(GW_ANNOUNCEMENT);
   rxQueue->push(&message);
 }
 
-void Gateway::routeToInternet() {
+void Gateway::transmit() {
   auto message = txQueue->poll();
-  if (message == nullptr)
+  if (message == nullptr || message->type != IPV4_DATAGRAM_MESSAGE) {
+    free(message);
     return;
-
-  auto l2Data = &message->data.layer2;
-
-  if (l2Data->type == ETHER_TYPE_IPV4) {
-    auto ipv4 = (ipv4_headers_t*)l2Data->payload;
-    size_t ipv4HeaderLength = IHL_CALC_SIZE * ipv4->ihl;
-    void* dataStart = ((uint8_t*)l2Data->payload) + ipv4HeaderLength;
-
-    size_t dataSize = l2Data->length - ipv4HeaderLength;
-
-    sendPacket(ipv4, dataStart, dataSize);
   }
 
-  free(l2Data->payload);
+  sendPacket((ipv4_headers_t*)message->data.ipv4Datagram.payload,
+             message->data.ipv4Datagram.size, false);
+
+  free(message->data.ipv4Datagram.payload);
   free(message);
+}
+
+void Gateway::receive(struct raw_pcb* pcb,
+                      struct pbuf* pbuff,
+                      const ip_addr_t* addr) {
+  auto ipv4 = (ipv4_headers_t*)pbuff->payload;
+  if (pbuff->len > WIFI_NODE_MTU) {
+    sendFragmentationNeeded(ipv4);
+    return;
+  }
+
+  if (ipv4->destinationIP != getIPAddress() ||
+      (ipv4->protocol != TCP && ipv4->protocol != UDP &&
+       ipv4->protocol != ICMP)) {
+    return;
+  }
+
+  void* payload = malloc(pbuff->len);
+  memcpy(payload, pbuff->payload, pbuff->len);
+
+  auto message = newIPv4DataMessage(
+      ipv4_datagram_t{.payload = payload, .size = (uint8_t)pbuff->len});
+  rxQueue->push(&message);
+}
+
+String Gateway::getMode() {
+  return "GW";
 }
