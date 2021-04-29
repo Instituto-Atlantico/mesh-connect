@@ -1,9 +1,7 @@
 #ifndef _GATEWAY_H_
 #define _GATEWAY_H_
 
-#include <dataqueue.h>
-#include <layer2.h>
-#include "message.h"
+#include <lwip/raw.h>
 #include "wifinode.h"
 
 #define SCAN_ATTEMPTS 3
@@ -15,8 +13,9 @@ bool shouldEnableGateway(const char* gwSSID,
 class Gateway : public WifiNode {
  private:
   TaskHandle_t taskHandle;
-  DataQueue<message_t>* rxQueue;
-  DataQueue<message_t>* txQueue;
+  struct raw_pcb* icmpPcb;
+  struct raw_pcb* tcpPcb;
+  struct raw_pcb* udpPcb;
 
  public:
   Gateway(const char* gwSSID,
@@ -25,11 +24,12 @@ class Gateway : public WifiNode {
           DataQueue<message_t>* txQueue);
 
   wifi_node_status_t getStatus() override;
-  String getMode() override { return "GW"; }
+  String getMode() override;
 
-  void routeToInternet();
-
+  void transmit() override;
   void announce();
+
+  void receive(struct raw_pcb* pcb, struct pbuf* pbuff, const ip_addr_t* addr);
 };
 
 #endif

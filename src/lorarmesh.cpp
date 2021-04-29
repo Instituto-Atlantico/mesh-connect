@@ -8,10 +8,12 @@
 #define LORA_RST 14
 #define LORA_IRQ 26
 #define LORA_FREQ 915E6
-#define TX_POWER 20
+#define LORA_TX_POWER 20
+#define LORA_SPREADING_FACTOR 7
+#define LORA_DUTY_CYCLE 1.0
 
 #define DATAGRAM_HEADER 5
-#define ROUTE_UPDATE_INTERVAL 10000  // 10 seconds
+#define ROUTE_UPDATE_INTERVAL 60000  // 60 seconds
 #define MIN_PACKET_LENGTH (HEADER_LENGTH + DATAGRAM_HEADER + MIN_MESSAGE_LENGTH)
 
 #define BOOT_LL1_DELAY_MICROS 500
@@ -26,16 +28,15 @@ static void task(void* pointer) {
 }
 
 LoraMesh::LoraMesh(DataQueue<message_t>* txQueue,
-                   DataQueue<message_t>* rxQueue,
-                   Router* router) {
+                   DataQueue<message_t>* rxQueue) {
   this->txQueue = txQueue;
   this->rxQueue = rxQueue;
-  this->router = router;
 
   layer1 = new Layer1Class();
   layer1->setPins(LORA_CS, LORA_RST, LORA_IRQ);
-  layer1->setTxPower(TX_POWER);
+  layer1->setTxPower(LORA_TX_POWER);
   layer1->setLoRaFrequency(LORA_FREQ);
+  layer1->setSpreadingFactor(LORA_SPREADING_FACTOR);
 
   int attempts = MAX_BOOT_LL1_RETRIES;
   while (!layer1->init()) {
@@ -47,6 +48,7 @@ LoraMesh::LoraMesh(DataQueue<message_t>* txQueue,
   layer2 = new LL2Class(layer1);
   layer2->setLocalAddress(getLocalMACAddress().c_str());
   layer2->setInterval(ROUTE_UPDATE_INTERVAL);
+  layer2->setDutyCycle(LORA_DUTY_CYCLE);
   layer2->init();
 
   xTaskCreatePinnedToCore(task, "LoraMeshTransceiver", 10000, this, 0,
@@ -62,32 +64,23 @@ void LoraMesh::transmit() {
 
   struct Datagram datagram;
   datagram.type = message->type;
-  int datagramSize = 0;
+  int messageLength = 0;
 
-  if (message->type == CONTROL_MESSAGE) {
-    memcpy(datagram.destination, BROADCAST, ADDR_LENGTH);
-    memcpy(datagram.message, &message->data.control, sizeof(control_data_t));
-    datagramSize += sizeof(control_data_t);
+  if (message->type == CONTROL_MESSAGE && message->destination != 0) {
+    messageLength = sizeof(control_data_t);
+    memcpy(datagram.message, &message->data.control, messageLength);
   }
 
-  else if (message->type == DATA_MESSAGE) {
-    auto destinationAddr = router->getGatewayAddress();
-
-    if (destinationAddr > 0) {
-      memcpy(datagram.destination, &destinationAddr, ADDR_LENGTH);
-      memcpy(datagram.message, &message->data.layer2, LAYER2_DATA_HEADERS_LEN);
-      memcpy(datagram.message + LAYER2_DATA_HEADERS_LEN,
-             message->data.layer2.payload, message->data.layer2.length);
-      datagramSize += LAYER2_DATA_HEADERS_LEN + message->data.layer2.length;
-    }
+  else if (message->type == IPV4_DATAGRAM_MESSAGE &&
+           message->destination != 0) {
+    messageLength = message->data.ipv4Datagram.size;
+    memcpy(datagram.message, message->data.ipv4Datagram.payload, messageLength);
+    free(message->data.ipv4Datagram.payload);
   }
 
-  if (datagramSize > 0) {
-    layer2->writeData(datagram, DATAGRAM_HEADER + datagramSize);
-  }
-
-  if (message->type == DATA_MESSAGE) {
-    free(message->data.layer2.payload);
+  if (messageLength > 0 && messageLength <= MESSAGE_LENGTH) {
+    memcpy(datagram.destination, &message->destination, ADDR_LENGTH);
+    layer2->writeData(datagram, DATAGRAM_HEADER + messageLength);
   }
 
   free(message);
@@ -95,28 +88,37 @@ void LoraMesh::transmit() {
 
 void LoraMesh::receive() {
   struct Packet packet = layer2->readData();
-  if (packet.totalLength <= MIN_PACKET_LENGTH) {
+  if (packet.totalLength < MIN_PACKET_LENGTH) {
     return;
   }
 
+  message_t message;
+  memcpy(&message.source, packet.source, sizeof(uint32_t));
+  memcpy(&message.destination, packet.datagram.destination, sizeof(uint32_t));
+
   if (packet.datagram.type == CONTROL_MESSAGE) {
-    control_data_t controlData;
-    memcpy(&controlData, packet.datagram.message, sizeof(control_data_t));
-    message_t message = newControlMessage(controlData);
-
-    router->handleControlMessage(&message);
+    message.type = CONTROL_MESSAGE;
+    memcpy(&message.data.control, packet.datagram.message,
+           sizeof(control_data_t));
   }
 
-  else if (packet.datagram.type == DATA_MESSAGE) {
-    layer2_data_t layer2Data;
-    memcpy(&layer2Data, packet.datagram.message, LAYER2_DATA_HEADERS_LEN);
+  else if (packet.datagram.type == IPV4_DATAGRAM_MESSAGE) {
+    message.type = IPV4_DATAGRAM_MESSAGE;
 
-    layer2Data.payload = malloc(layer2Data.length);
-    memcpy(layer2Data.payload,
-           packet.datagram.message + LAYER2_DATA_HEADERS_LEN,
-           layer2Data.length);
+    message.data.ipv4Datagram.size =
+        packet.totalLength - HEADER_LENGTH - DATAGRAM_HEADER;
 
-    message_t message = newDataMessage(layer2Data);
-    rxQueue->push(&message);
+    message.data.ipv4Datagram.payload = malloc(message.data.ipv4Datagram.size);
+    memcpy(message.data.ipv4Datagram.payload, packet.datagram.message,
+           message.data.ipv4Datagram.size);
   }
+
+  rxQueue->push(&message);
+}
+
+DataQueue<message_t>* LoraMesh::getTXQueue() {
+  return txQueue;
+}
+DataQueue<message_t>* LoraMesh::getRXQueue() {
+  return rxQueue;
 }
