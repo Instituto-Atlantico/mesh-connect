@@ -7,6 +7,8 @@
 #include <lwip/sockets.h>
 
 #define ICMP_DUR_FRAG_EXTRA_BYTES 8
+#define TCP_CHECKSUM_FIELD_OFFSET 16
+#define UDP_CHECKSUM_FIELD_OFFSET 6
 
 static void wifiTask(void* pointer) {
   auto wifiNode = (WifiNode*)pointer;
@@ -94,9 +96,23 @@ void WifiNode::sendPacket(ipv4_headers_t* headers,
   if (pbuff != nullptr && pbuff->len == pbuff->tot_len && pbuff->next == NULL) {
     memcpy(pbuff->payload, ((uint8_t*)headers) + headerSize, payloadSize);
 
+    ip_addr sourceIP = IPADDR4_INIT((uint32_t)getIPAddress());
     ip_addr destinationIP = IPADDR4_INIT(headers->destinationIP);
-    if (keepLocalIP)
+    if (keepLocalIP) {
       pcb->local_ip = IPADDR4_INIT(headers->sourceIP);
+      sourceIP = pcb->local_ip;
+    }
+
+    // recompute checksum
+    if (headers->protocol == TCP || headers->protocol == UDP) {
+      auto fieldOffset = headers->protocol == TCP ? TCP_CHECKSUM_FIELD_OFFSET
+                                                  : UDP_CHECKSUM_FIELD_OFFSET;
+      auto* checksum = ((uint16_t*)(((uint8_t*)pbuff->payload) + fieldOffset));
+      *checksum = 0;
+      *checksum =
+          inet_chksum_pseudo(pbuff, headers->protocol, payloadSize,
+                             &sourceIP.u_addr.ip4, &destinationIP.u_addr.ip4);
+    }
 
     raw_sendto(pcb, pbuff, &destinationIP);
   }
