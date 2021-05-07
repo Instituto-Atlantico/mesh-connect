@@ -47,8 +47,6 @@ void GatewayNAT::translate(ipv4_datagram_t* datagram, uint32_t sourceNode) {
     uint16_t publicPort = index + PUBLIC_PORT_OFFSET;
     setL4Port(ipv4, size, publicPort, SOURCE_PORT_INDEX);
   }
-
-  // TODO handle checksum
 }
 
 uint32_t GatewayNAT::revert(ipv4_datagram_t* datagram) {
@@ -73,7 +71,6 @@ uint32_t GatewayNAT::revert(ipv4_datagram_t* datagram) {
 
   ipv4->destinationIP = tableEntry->sourceIP;
   setL4Port(ipv4, size, tableEntry->sourcePort, DESTINATION_PORT_INDEX);
-  // TODO handle checksum
 
   return tableEntry->sourceNode;
 }
