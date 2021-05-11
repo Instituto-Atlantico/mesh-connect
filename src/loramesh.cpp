@@ -1,8 +1,8 @@
+#include "loramesh.h"
 #include <Layer1_LoRa.h>
 #include <LoRaLayer2.h>
 #include <address.h>
 #include <wifinode.h>
-#include "loramesh.h"
 
 #define LORA_CS 18
 #define LORA_RST 14
