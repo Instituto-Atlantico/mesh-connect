@@ -6,6 +6,7 @@
 #define MAX_CLIENTS 4
 #define MAX_TX_POWER 82
 #define DEFAULT_CHANNEL 5
+#define DNS_SERVER 0x08080808
 
 AccessPoint* apInstance = nullptr;
 
@@ -27,6 +28,14 @@ AccessPoint::AccessPoint(const char* ssid,
 
   if (!WiFi.softAP(ssid, nullptr, DEFAULT_CHANNEL, false, MAX_CLIENTS))
     throw "Cannot start AP";
+
+  tcpip_adapter_dns_info_t dns = {.ip = IPADDR4_INIT(DNS_SERVER)};
+  tcpip_adapter_set_dns_info(TCPIP_ADAPTER_IF_AP, TCPIP_ADAPTER_DNS_MAIN, &dns);
+
+  dhcps_offer_t offer = 1;
+  tcpip_adapter_dhcps_option(TCPIP_ADAPTER_OP_SET,
+                             TCPIP_ADAPTER_DOMAIN_NAME_SERVER, &offer,
+                             sizeof(offer));
 
   ESP_ERROR_CHECK(esp_wifi_set_promiscuous_filter(&promiscuousFilter));
   ESP_ERROR_CHECK(esp_wifi_set_promiscuous_rx_cb(&receiveCallback));
