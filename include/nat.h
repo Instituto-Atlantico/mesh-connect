@@ -1,5 +1,9 @@
 #ifndef _NAT_H_
 #define _NAT_H_
+#define MAX(X,Y) ((X)>(Y)?(X):(Y))
+#define MIN(X,Y) ((X)<(Y)?(X):(Y))
+#define ABS(X) ((X)<0?(X*(-1)):(X))
+
 
 #include <boolmap.h>
 #include <stddef.h>
@@ -17,6 +21,7 @@ typedef struct {
   uint16_t destinationPort;
 } gw_nat_flow_entry_t;  // 17 bytes
 
+
 class GatewayNAT {
  private:
   gw_nat_flow_entry_t entries[NUM_AP_NAT_FLOWS];
@@ -26,6 +31,8 @@ class GatewayNAT {
   void translate(ipv4_datagram_t* datagram, uint32_t sourceNode);
   uint32_t revert(ipv4_datagram_t* datagram);
   void clean();
+
+
 };
 
 #endif

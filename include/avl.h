@@ -1,39 +1,43 @@
 #ifndef _AVL_H_
 #define _AVL_H_
+#define MAX(X,Y) ((X)>(Y)?(X):(Y))
+#define MIN(X,Y) ((X)<(Y)?(X):(Y))
+#define ABS(X) ((X)<0?(X*(-1)):(X))
 
 #include <boolmap.h>
 #include <stddef.h>
 #include "message.h"
+#include "nat.h"
+typedef struct Node* localRoot;
 
-struct tree_node {
-  bool freeEntry : 1;
-  uint8_t protocol : 7;
-  uint32_t sourceNode;
-  uint32_t sourceIP;
-  uint16_t sourcePort;
-  uint32_t destinationIP;
-  uint16_t destinationPort;
+struct Node{
+  gw_nat_flow_entry_t info;
   uint8_t height;
-  struct tree_node* left;
-  struct tree_node* right;
+  uint8_t type;
+  struct Node* left;
+  struct Node* right;
 };
+
 
 class AVL {
  private:
-  tree_node* root;
+  localRoot* root;
+  uint8_t cntNodes;
 
  public:
   AVL();
-  uint8_t calcHeight(struct tree_node* node);
-  uint8_t balancedFactor(struct tree_node* node);
-  bool compare(struct tree_node* node1, struct tree_node* node2);
-  void rotationLL();
-  void rotationRR();
-  void rotationLR();
-  void rotationRL();
-  void insert(tree_node* node);
-  void deleteNode(tree_node* node);
-  bool findNode(tree_node* node);
+  localRoot *getTreeRoot();
+  uint8_t getHeight(Node *node);
+  uint8_t balanceFactor(Node *node);
+  void rotationLL(localRoot *root);
+  void rotationRR(localRoot *root);
+  void rotationLR(localRoot *root);
+  void rotationRL(localRoot *root);
+  bool equals(gw_nat_flow_entry_t entry1, gw_nat_flow_entry_t entry2, uint8_t type);
+  bool cmp1(gw_nat_flow_entry_t entry1, gw_nat_flow_entry_t entry2);
+  bool cmp2(gw_nat_flow_entry_t entry1, gw_nat_flow_entry_t entry2);
+  bool insert(uint8_t index, gw_nat_flow_entry_t entry);
+  bool search(gw_nat_flow_entry_t entry);
 };
 
 #endif
