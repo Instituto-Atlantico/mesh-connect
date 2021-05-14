@@ -83,7 +83,7 @@ void AccessPoint::receive(wifi_promiscuous_pkt_t* packet) {
 
   // send to the queue
   auto message = newIPv4DataMessage(
-      ipv4_datagram_t{.payload = payload, .size = (uint8_t)l2data.length});
+      ipv4_datagram_t{.payload = payload, .size = l2data.length});
   rxQueue->push(&message);
 }
 

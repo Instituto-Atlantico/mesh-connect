@@ -18,7 +18,7 @@ typedef struct __attribute__((packed)) {
 
 typedef struct __attribute__((packed)) {
   void* payload;
-  uint8_t size;
+  uint16_t size;
 } ipv4_datagram_t;
 
 typedef struct __attribute__((packed)) {
