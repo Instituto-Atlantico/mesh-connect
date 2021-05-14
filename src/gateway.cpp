@@ -134,7 +134,7 @@ void Gateway::receive(struct raw_pcb* pcb,
   memcpy(payload, pbuff->payload, pbuff->len);
 
   auto message = newIPv4DataMessage(
-      ipv4_datagram_t{.payload = payload, .size = (uint8_t)pbuff->len});
+      ipv4_datagram_t{.payload = payload, .size = pbuff->len});
   rxQueue->push(&message);
 }
 
