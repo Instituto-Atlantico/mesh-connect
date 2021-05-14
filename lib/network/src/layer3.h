@@ -20,8 +20,7 @@ typedef struct {
   uint8_t dscp : 6;
   uint16_t length : 16;
   uint16_t id : 16;
-  uint16_t offset : 13;
-  uint8_t flags : 3;
+  uint16_t fragmentation : 16;
   uint8_t ttl : 8;
   uint8_t protocol : 8;
   uint16_t checksum : 16;
@@ -40,5 +39,6 @@ void setL4Port(ipv4_headers_t* ipv4,
                size_t size,
                uint16_t port,
                uint8_t portIndex);
+bool getDontFragmentBit(ipv4_headers_t* headers);
 
 #endif

@@ -44,24 +44,6 @@ static u8_t readIncomingPacket(void* arg,
   return 1;
 }
 
-static void newPCB(struct raw_pcb** pcb, u8_t protocol, Gateway* gateway) {
-  auto newPcb = raw_new(protocol);
-  if (newPcb == nullptr) {
-    printf("Could not allocate PCB\n");
-    ESP.restart();
-  }
-
-  *pcb = newPcb;
-
-  auto err = raw_bind(newPcb, IP4_ADDR_ANY);
-  if (err != ERR_OK) {
-    printf("Could bind PCB to all IPv4 addresses\n");
-    ESP.restart();
-  }
-
-  raw_recv(newPcb, readIncomingPacket, gateway);
-}
-
 Gateway::Gateway(const char* gwSSID,
                  const char* gwPassword,
                  DataQueue<message_t>* txQueue,
@@ -81,9 +63,27 @@ Gateway::Gateway(const char* gwSSID,
 
   WiFi.setAutoReconnect(true);
 
-  newPCB(&icmpPcb, ICMP, this);
-  newPCB(&tcpPcb, TCP, this);
-  newPCB(&udpPcb, UDP, this);
+  newPCB(&icmpPcb, ICMP);
+  newPCB(&tcpPcb, TCP);
+  newPCB(&udpPcb, UDP);
+}
+
+void Gateway::newPCB(struct raw_pcb** pcb, u8_t protocol) {
+  auto newPcb = raw_new(protocol);
+  if (newPcb == nullptr) {
+    Serial.println("Could not allocate PCB\n");
+    ESP.restart();
+  }
+
+  *pcb = newPcb;
+
+  auto err = raw_bind(newPcb, IP4_ADDR_ANY);
+  if (err != ERR_OK) {
+    Serial.println("Could bind PCB to all IPv4 addresses\n");
+    ESP.restart();
+  }
+
+  raw_recv(newPcb, readIncomingPacket, this);
 }
 
 wifi_node_status_t Gateway::getStatus() {
@@ -118,14 +118,15 @@ void Gateway::receive(struct raw_pcb* pcb,
                       struct pbuf* pbuff,
                       const ip_addr_t* addr) {
   auto ipv4 = (ipv4_headers_t*)pbuff->payload;
-  if (pbuff->len > WIFI_NODE_MTU) {
-    sendFragmentationNeeded(ipv4);
-    return;
-  }
 
   if (ipv4->destinationIP != getIPAddress() ||
       (ipv4->protocol != TCP && ipv4->protocol != UDP &&
        ipv4->protocol != ICMP)) {
+    return;
+  }
+
+  if (pbuff->len > WIFI_NODE_MTU && getDontFragmentBit(ipv4)) {
+    sendFragmentationNeeded(ipv4);
     return;
   }
 

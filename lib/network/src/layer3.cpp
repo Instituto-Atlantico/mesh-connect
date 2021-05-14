@@ -1,9 +1,11 @@
 #include <layer3.h>
+#include <lwip/def.h>
 
 #define MULTICAST_IP_RANGE_START 224
 #define MULTICAST_IP_RANGE_END 239
 #define IPV4_HEADER_SIZE_MULTIPLIER 4
 #define TCPUDP_PORT_HEADERS_SIZE 8
+#define IPV4_DF_BIT_OFFSET 14
 
 bool isMulticast(uint32_t ip) {
   uint8_t firstByte = *((uint8_t*)&ip);
@@ -48,4 +50,8 @@ void setL4Port(ipv4_headers_t* ipv4,
     uint16_t* portHeaders = (uint16_t*)(((uint8_t*)ipv4) + headerLength);
     portHeaders[portIndex] = port;
   }
+}
+
+bool getDontFragmentBit(ipv4_headers_t* headers) {
+  return (ntohs(headers->fragmentation) >> IPV4_DF_BIT_OFFSET) & 1;
 }

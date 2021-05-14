@@ -17,6 +17,8 @@ class Gateway : public WifiNode {
   struct raw_pcb* tcpPcb;
   struct raw_pcb* udpPcb;
 
+  void newPCB(struct raw_pcb** pcb, u8_t protocol);
+
  public:
   Gateway(const char* gwSSID,
           const char* gwPassword,

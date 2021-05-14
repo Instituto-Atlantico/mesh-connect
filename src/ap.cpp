@@ -62,15 +62,13 @@ void AccessPoint::receive(wifi_promiscuous_pkt_t* packet) {
 
   auto ipv4 = (ipv4_headers_t*)l2data.payload;
   if (ipv4->destinationIP == 0 || ipv4->destinationIP == getIPAddress() ||
-      isMulticast(ipv4->destinationIP)) {
+      isMulticast(ipv4->destinationIP) ||
+      (ipv4->protocol != TCP && ipv4->protocol != UDP &&
+       ipv4->protocol != ICMP)) {
     return;
   }
 
-  if (ipv4->protocol != TCP && ipv4->protocol != UDP && ipv4->protocol != ICMP)
-    return;
-
-  // drop frame if it's larger than MTU
-  if (l2data.length > WIFI_NODE_MTU) {
+  if (l2data.length > WIFI_NODE_MTU && getDontFragmentBit(ipv4)) {
     sendFragmentationNeeded(ipv4);
     return;
   }
