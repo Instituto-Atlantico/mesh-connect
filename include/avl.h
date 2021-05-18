@@ -10,10 +10,23 @@
 #include "nat.h"
 typedef struct Node* localRoot;
 
+struct dest{
+  uint8_t protocol;
+  uint32_t destinationIP;
+  uint16_t destinationPort;
+};
+
+struct source{
+  uint32_t sourceNode;
+  uint32_t sourceIP;
+  uint16_t sourcePort;
+};
+
 struct Node{
-  gw_nat_flow_entry_t info;
+  gw_nat_flow_entry_t dest;
+  source linkedlist;
   uint8_t height;
-  uint8_t type;
+  uint8_t index;
   struct Node* left;
   struct Node* right;
 };

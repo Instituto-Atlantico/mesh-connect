@@ -12,13 +12,12 @@
 #define NUM_AP_NAT_FLOWS 256
 
 typedef struct {
-  bool freeEntry : 1;
-  uint8_t protocol : 7;
+  uint8_t protocol;
+  uint32_t destinationIP;
+  uint16_t destinationPort;
   uint32_t sourceNode;
   uint32_t sourceIP;
   uint16_t sourcePort;
-  uint32_t destinationIP;
-  uint16_t destinationPort;
 } gw_nat_flow_entry_t;  // 17 bytes
 
 
