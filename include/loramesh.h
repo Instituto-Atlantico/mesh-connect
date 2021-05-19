@@ -16,6 +16,9 @@ class LoraMesh {
   Layer1Class* layer1;
   LL2Class* layer2;
 
+  void transmitControlMessage(message_t* message);
+  void transmitDataMessage(message_t* message);
+
  public:
   LoraMesh(DataQueue<message_t>* txQueue, DataQueue<message_t>* rxQueue);
 

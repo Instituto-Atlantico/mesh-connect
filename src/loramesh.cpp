@@ -2,6 +2,7 @@
 #include <Layer1_LoRa.h>
 #include <LoRaLayer2.h>
 #include <address.h>
+#include <fragmenter.h>
 #include <wifinode.h>
 
 #define LORA_CS 18
@@ -18,6 +19,8 @@
 
 #define BOOT_LL1_DELAY_MICROS 500
 #define MAX_BOOT_LL1_RETRIES 10
+
+#define FRAG_DATA 50
 
 static void task(void* pointer) {
   auto loraMesh = (LoraMesh*)pointer;
@@ -59,31 +62,62 @@ void LoraMesh::transmit() {
   layer2->daemon();
 
   auto message = txQueue->poll();
-  if (message == nullptr)
+  if (message == nullptr || message->destination == 0) {
+    free(message);
     return;
+  }
+
+  if (message->type == CONTROL_MESSAGE) {
+    transmitControlMessage(message);
+  } else if (message->type == IPV4_DATAGRAM_MESSAGE) {
+    transmitDataMessage(message);
+  }
+
+  free(message);
+}
+
+void LoraMesh::transmitControlMessage(message_t* message) {
+  int messageLength = sizeof(control_data_t);
 
   struct Datagram datagram;
   datagram.type = message->type;
-  int messageLength = 0;
+  memcpy(datagram.message, &message->data.control, messageLength);
+  memcpy(datagram.destination, &message->destination, ADDR_LENGTH);
 
-  if (message->type == CONTROL_MESSAGE && message->destination != 0) {
-    messageLength = sizeof(control_data_t);
-    memcpy(datagram.message, &message->data.control, messageLength);
-  }
+  layer2->writeData(datagram, DATAGRAM_HEADER + messageLength);
+}
 
-  else if (message->type == IPV4_DATAGRAM_MESSAGE &&
-           message->destination != 0) {
-    messageLength = message->data.ipv4Datagram.size;
-    memcpy(datagram.message, message->data.ipv4Datagram.payload, messageLength);
-    free(message->data.ipv4Datagram.payload);
-  }
+void LoraMesh::transmitDataMessage(message_t* message) {
+  auto messageLength = message->data.ipv4Datagram.size;
+  auto payload = message->data.ipv4Datagram.payload;
 
-  if (messageLength > 0 && messageLength <= MESSAGE_LENGTH) {
+  if (messageLength <= MESSAGE_LENGTH) {
+    struct Datagram datagram;
+    datagram.type = message->type;
+    memcpy(datagram.message, payload, messageLength);
+    free(payload);
     memcpy(datagram.destination, &message->destination, ADDR_LENGTH);
     layer2->writeData(datagram, DATAGRAM_HEADER + messageLength);
   }
 
-  free(message);
+  else {
+    Fragments fragments(payload, messageLength, MESSAGE_LENGTH - 4);
+    while (fragments.hasNext()) {
+      auto fragment = fragments.next();
+
+      struct Datagram datagram;
+      datagram.type = FRAG_DATA;
+
+      memcpy(datagram.message, &fragment.id, 1);
+      memcpy(datagram.message + 1, &fragment.fragmentIndex, 1);
+      memcpy(datagram.message + 2, &fragment.totalSize, 2);
+      memcpy(datagram.message + 4, fragment.data, fragment.fragmentSize);
+      memcpy(datagram.destination, &message->destination, ADDR_LENGTH);
+      layer2->writeData(datagram, DATAGRAM_HEADER + messageLength);
+    }
+
+    free(payload);
+  }
 }
 
 void LoraMesh::receive() {
