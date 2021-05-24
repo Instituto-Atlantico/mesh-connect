@@ -12,7 +12,7 @@ typedef struct {
   void* data;
 } fragment_t;
 
-class Fragments {
+class Fragmenter {
  private:
   static uint8_t nextId;
 
@@ -24,11 +24,30 @@ class Fragments {
   uint8_t currentFragment;
 
  public:
-  Fragments(void* data, uint16_t size, uint8_t maxFragmentSize);
-  Fragments(const Fragments& other);
+  Fragmenter(void* data, uint16_t size, uint8_t maxFragmentSize);
+  Fragmenter(const Fragmenter& other);
   bool hasNext();
   fragment_t next();
   void reset();
+};
+
+class Reasembler {
+ private:
+  uint8_t id;
+  void* data;
+  uint16_t totalSize;
+  uint8_t maxFragmentSize;
+  uint8_t count;
+  bool receivedFragments[256];
+  uint8_t missingCount;
+
+ public:
+  Reasembler(fragment_t fragment, uint8_t maxFragmentSize);
+  bool read(fragment_t fragment);
+  bool isDone();
+  void* getData();
+  uint16_t getTotalSize();
+  ~Reasembler();
 };
 
 #endif
