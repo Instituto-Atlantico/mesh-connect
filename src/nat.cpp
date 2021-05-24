@@ -21,7 +21,8 @@ void GatewayNAT::translate(ipv4_datagram_t* datagram, uint32_t sourceNode) {
                                .sourceIP = ipv4->sourceIP,
                                .sourcePort = 0,
                                .destinationIP = ipv4->destinationIP,
-                               .destinationPort = 0};
+                               .destinationPort = 0,
+                               .flag = true};
   getL4PortNumbers(ipv4, size, &entry.sourcePort, &entry.destinationPort);
 
   uint16_t index = 0;
@@ -71,10 +72,15 @@ uint32_t GatewayNAT::revert(ipv4_datagram_t* datagram) {
 
   ipv4->destinationIP = tableEntry->sourceIP;
   setL4Port(ipv4, size, tableEntry->sourcePort, DESTINATION_PORT_INDEX);
+  tableEntry->flag = false;
 
   return tableEntry->sourceNode;
 }
 
 void GatewayNAT::clean() {
-  printf("Plase implement me\n");
+  for (auto& entry : entries) {
+    if (entry.freeEntry == false && entry.flag == false) {
+      entry.freeEntry = true;
+    }
+  }
 }
