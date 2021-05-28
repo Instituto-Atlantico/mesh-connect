@@ -15,12 +15,14 @@ typedef struct {
   uint16_t sourcePort;
   uint32_t destinationIP;
   uint16_t destinationPort;
-  bool flag;
+  uint8_t flag;
 } gw_nat_flow_entry_t;  // 18 bytes
 
 class GatewayNAT {
  private:
   gw_nat_flow_entry_t entries[NUM_AP_NAT_FLOWS];
+  // Array of time
+  int times[NUM_AP_NAT_FLOWS];
 
  public:
   GatewayNAT();

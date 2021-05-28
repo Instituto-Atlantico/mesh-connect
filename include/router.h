@@ -38,6 +38,7 @@ class AcessPointRouter : public Router {
 
 class GatewayRouter : public Router {
  private:
+  TaskHandle_t GatewayRouterTaskHandle;
   GatewayNAT nat;
 
  protected:
@@ -46,6 +47,7 @@ class GatewayRouter : public Router {
 
  public:
   GatewayRouter(WifiNode* wifiNode, LoraMesh* loraMesh);
+  void cleanNatTable();
 };
 
 #endif
