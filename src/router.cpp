@@ -15,7 +15,6 @@ static void routerTask(void* pointer) {
 Router::Router(WifiNode* wifiNode, LoraMesh* loraMesh) {
   this->wifiNode = wifiNode;
   this->loraMesh = loraMesh;
-
   xTaskCreatePinnedToCore(routerTask, "RouterTask", 10000, this, 0,
                           &routerTaskHandle, ROUTER_TASK_CORE);
 }
@@ -100,8 +99,18 @@ uint32_t AcessPointRouter::getGatewayAddress() {
 ****** GatewayRouter ******
 ***************************
 */
+
+static void gatewayRouterTask(void* pointer) {
+  auto gatRouter = (GatewayRouter*)pointer;
+  for (;;) {
+    gatRouter->cleanNatTable();
+  }
+}
 GatewayRouter::GatewayRouter(WifiNode* wifiNode, LoraMesh* loraMesh)
-    : Router(wifiNode, loraMesh) {}
+    : Router(wifiNode, loraMesh) {
+  xTaskCreatePinnedToCore(gatewayRouterTask, "GatewayRouterTask", 10000, this, 0,
+                          &GatewayRouterTaskHandle, ROUTER_TASK_CORE);
+}
 
 bool GatewayRouter::routeMessageFromLoRa(message_t* message) {
   bool shouldForward = false;
@@ -131,4 +140,8 @@ bool GatewayRouter::routeMessageFromWiFi(message_t* message) {
   }
 
   return shouldForward;
+}
+
+void GatewayRouter::cleanNatTable() {
+  nat.clean();
 }
