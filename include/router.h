@@ -38,7 +38,6 @@ class AcessPointRouter : public Router {
 
 class GatewayRouter : public Router {
  private:
-  TaskHandle_t CleanNatTableTaskHandle;
   GatewayNAT nat;
 
  protected:

@@ -2,6 +2,7 @@
 #define _NAT_H_
 
 #include <boolmap.h>
+#include <dataqueue.h>
 #include <stddef.h>
 #include "message.h"
 
@@ -21,8 +22,7 @@ typedef struct {
 class GatewayNAT {
  private:
   gw_nat_flow_entry_t entries[NUM_AP_NAT_FLOWS];
-  // Array of time
-  int times[NUM_AP_NAT_FLOWS];
+  TaskHandle_t cleanNatTableTaskHandle;
 
  public:
   GatewayNAT();
