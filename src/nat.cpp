@@ -10,7 +10,7 @@ static void cleanNatTableTask(void* pointer) {
   auto gatNAT = (GatewayNAT*)pointer;
   for (;;) {
     gatNAT->clean();
-    vTaskDelay(15000 / portTICK_PERIOD_MS);
+    vTaskDelay(60000 / portTICK_PERIOD_MS);
   }
 }
 
@@ -49,11 +49,6 @@ void GatewayNAT::translate(ipv4_datagram_t* datagram, uint32_t sourceNode) {
         entries[index].sourceNode == entry.sourceNode &&
         entries[index].sourcePort == entry.sourcePort) {
       entries[index].flag = 1;
-      Serial.printf("I'm already in the table\n");
-      Serial.printf("Flag %u\n", entries[index].flag);
-      Serial.printf("Index %u\n", index);
-      Serial.printf("SRC: %.2X\n", entries[index].sourceIP);
-      Serial.printf("DST: %.2X\n", entries[index].destinationIP);
       break;
     } else if (freeIndex == -1 && entries[index].freeEntry) {
       freeIndex = index;
@@ -66,11 +61,6 @@ void GatewayNAT::translate(ipv4_datagram_t* datagram, uint32_t sourceNode) {
     } else {
       index = freeIndex;
       entries[index] = entry;
-      Serial.printf("I'm enter in the table\n");
-      Serial.printf("Flag %u\n", entries[index].flag);
-      Serial.printf("Index %u\n", index);
-      Serial.printf("SRC: %.2X\n", entries[index].sourceIP);
-      Serial.printf("DST: %.2X\n", entries[index].destinationIP);
     }
   }
 
@@ -89,14 +79,12 @@ uint32_t GatewayNAT::revert(ipv4_datagram_t* datagram) {
   getL4PortNumbers(ipv4, size, &sourcePort, &destinationPort);
 
   gw_nat_flow_entry_t* tableEntry = nullptr;
-  int indice = 0;
   for (auto& entry : entries) {
     if (entry.destinationPort == sourcePort &&
         entry.destinationIP == ipv4->sourceIP &&
         entry.protocol == ipv4->protocol) {
       tableEntry = &entry;
     }
-    indice++;
   }
 
   if (tableEntry == nullptr)
@@ -104,25 +92,17 @@ uint32_t GatewayNAT::revert(ipv4_datagram_t* datagram) {
 
   ipv4->destinationIP = tableEntry->sourceIP;
   setL4Port(ipv4, size, tableEntry->sourcePort, DESTINATION_PORT_INDEX);
-  tableEntry->flag = 0;
-  // Catch time;
+  tableEntry->flag = 1;
 
   return tableEntry->sourceNode;
 }
 
 void GatewayNAT::clean() {
-  uint8_t indice = 0;
   for (auto& entry : entries) {
-    if (entry.freeEntry == false && entry.flag == 0) {
+    if (entry.freeEntry == false && entry.flag == 1) {
+      entry.flag = 0;
+    } else if (entry.freeEntry == false && entry.flag == 0) {
       entry.freeEntry = true;
-      Serial.println("I will clean the table");
-      Serial.printf("Flag %u\n", entry.flag);
-      Serial.printf("Index %u\n", indice);
-      Serial.printf("SRC : %.2X\n", entry.sourceIP);
-      Serial.printf("DST : %.2X\n", entry.destinationIP);
-      auto now = esp_timer_get_time();
-      // Time to clean
     }
-    indice++;
   }
 }
