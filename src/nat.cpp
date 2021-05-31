@@ -11,7 +11,7 @@ GatewayNAT::GatewayNAT() {
     entry.freeEntry = true;
   }
 
-  //Array oo time
+  // Array oo time
   memset(times, 0, sizeof(times));
 }
 
@@ -95,9 +95,9 @@ uint32_t GatewayNAT::revert(ipv4_datagram_t* datagram) {
 
   ipv4->destinationIP = tableEntry->sourceIP;
   setL4Port(ipv4, size, tableEntry->sourcePort, DESTINATION_PORT_INDEX);
-  tableEntry->flag =0;
+  tableEntry->flag = 0;
   // Catch time;
-  if(tableEntry->flag == 0){
+  if (tableEntry->flag == 0) {
     times[indice] = esp_timer_get_time();
   }
 
