@@ -100,18 +100,8 @@ uint32_t AcessPointRouter::getGatewayAddress() {
 ***************************
 */
 
-static void cleanNatTableTask(void* pointer) {
-  auto gatRouter = (GatewayRouter*)pointer;
-  for (;;) {
-    gatRouter->cleanNatTable();
-    vTaskDelay(15000/portTICK_PERIOD_MS);
-  }
-}
 GatewayRouter::GatewayRouter(WifiNode* wifiNode, LoraMesh* loraMesh)
-    : Router(wifiNode, loraMesh) {
-  xTaskCreatePinnedToCore(cleanNatTableTask, "CleanNatTableTaskHandle", 10000, this, 0,
-                          &CleanNatTableTaskHandle, ROUTER_TASK_CORE);
-}
+    : Router(wifiNode, loraMesh) {}
 
 bool GatewayRouter::routeMessageFromLoRa(message_t* message) {
   bool shouldForward = false;

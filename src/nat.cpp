@@ -3,7 +3,16 @@
 #include <layer3.h>
 #include <string.h>
 
+#define GATNAT_TASK_CORE 1
 #define PUBLIC_PORT_OFFSET 10000
+
+static void cleanNatTableTask(void* pointer) {
+  auto gatNAT = (GatewayNAT*)pointer;
+  for (;;) {
+    gatNAT->clean();
+    vTaskDelay(15000 / portTICK_PERIOD_MS);
+  }
+}
 
 GatewayNAT::GatewayNAT() {
   memset(entries, 0, sizeof(entries));
@@ -11,8 +20,8 @@ GatewayNAT::GatewayNAT() {
     entry.freeEntry = true;
   }
 
-  // Array oo time
-  memset(times, 0, sizeof(times));
+  xTaskCreatePinnedToCore(cleanNatTableTask, "CleanNatTableTaskHandle", 10000,
+                          this, 0, &cleanNatTableTaskHandle, GATNAT_TASK_CORE);
 }
 
 void GatewayNAT::translate(ipv4_datagram_t* datagram, uint32_t sourceNode) {
@@ -97,9 +106,6 @@ uint32_t GatewayNAT::revert(ipv4_datagram_t* datagram) {
   setL4Port(ipv4, size, tableEntry->sourcePort, DESTINATION_PORT_INDEX);
   tableEntry->flag = 0;
   // Catch time;
-  if (tableEntry->flag == 0) {
-    times[indice] = esp_timer_get_time();
-  }
 
   return tableEntry->sourceNode;
 }
@@ -116,7 +122,6 @@ void GatewayNAT::clean() {
       Serial.printf("DST : %.2X\n", entry.destinationIP);
       auto now = esp_timer_get_time();
       // Time to clean
-      Serial.printf("Time to clean : %d\n", now - times[indice]);
     }
     indice++;
   }
