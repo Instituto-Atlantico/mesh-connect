@@ -46,7 +46,6 @@ class GatewayRouter : public Router {
 
  public:
   GatewayRouter(WifiNode* wifiNode, LoraMesh* loraMesh);
-  void cleanNatTable();
 };
 
 #endif
