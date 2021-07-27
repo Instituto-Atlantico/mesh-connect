@@ -61,11 +61,15 @@ void setup() {
 
   monitor = new MONITOR_CLASS(loraTXQueue, loraRXQueue, wifi, mesh);  // FIXME
 
+  pinMode(14,OUTPUT);
+
   led.off();
 }
 
+
 void loop() {
   led.on();
+  digitalWrite(14,HIGH);
   monitor->updateInfo();
   led.off();
   delay(MONITOR_UPDATE_INTERVAL);
