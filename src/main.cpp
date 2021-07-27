@@ -19,6 +19,8 @@
 #define BLINK_LED -1
 #endif
 
+#define PIN 14
+
 // Operational defines
 #ifndef DATA_QUEUE_LENGTH
 #define DATA_QUEUE_LENGTH 10
@@ -37,7 +39,7 @@ WifiNode* wifi;
 LoraMesh* mesh;
 Router* router;
 Monitor* monitor;
-Led led(BLINK_LED);
+Led led(PIN);
 
 void setup() {
   Serial.begin(115200);
@@ -61,15 +63,11 @@ void setup() {
 
   monitor = new MONITOR_CLASS(loraTXQueue, loraRXQueue, wifi, mesh);  // FIXME
 
-  pinMode(14,OUTPUT);
-
   led.off();
 }
 
-
 void loop() {
   led.on();
-  digitalWrite(14,HIGH);
   monitor->updateInfo();
   led.off();
   delay(MONITOR_UPDATE_INTERVAL);
