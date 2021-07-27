@@ -15,7 +15,7 @@
 #ifndef MONITOR_UPDATE_INTERVAL
 #define MONITOR_UPDATE_INTERVAL 1000
 #endif
-#ifndef BLINK_LED 14
+#ifndef BLINK_LED
 #define BLINK_LED -1
 #endif
 
