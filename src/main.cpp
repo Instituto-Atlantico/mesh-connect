@@ -15,11 +15,9 @@
 #ifndef MONITOR_UPDATE_INTERVAL
 #define MONITOR_UPDATE_INTERVAL 1000
 #endif
-#ifndef BLINK_LED
+#ifndef BLINK_LED 14
 #define BLINK_LED -1
 #endif
-
-#define PIN 14
 
 // Operational defines
 #ifndef DATA_QUEUE_LENGTH
@@ -39,7 +37,7 @@ WifiNode* wifi;
 LoraMesh* mesh;
 Router* router;
 Monitor* monitor;
-Led led(PIN);
+Led led(BLINK_LED);
 
 void setup() {
   Serial.begin(115200);
