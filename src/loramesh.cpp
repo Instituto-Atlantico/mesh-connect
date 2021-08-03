@@ -16,6 +16,8 @@
 #define DATAGRAM_HEADER 5
 #define ROUTE_UPDATE_INTERVAL 60000  // 60 seconds
 #define MIN_PACKET_LENGTH (HEADER_LENGTH + DATAGRAM_HEADER + MIN_MESSAGE_LENGTH)
+#define FRAGMENTATION_HEADER_SIZE 4
+#define MAX_FRAGMENT_SIZE MESSAGE_LENGTH - FRAGMENTATION_HEADER_SIZE
 
 #define BOOT_LL1_DELAY_MICROS 500
 #define MAX_BOOT_LL1_RETRIES 10
@@ -54,6 +56,8 @@ LoraMesh::LoraMesh(DataQueue<message_t>* txQueue,
   layer2->setDutyCycle(LORA_DUTY_CYCLE);
   layer2->init();
 
+  memset(reasemblers, 0, sizeof(reasemblers));
+
   xTaskCreatePinnedToCore(task, "LoraMeshTransceiver", 10000, this, 0,
                           &transceiverTaskHandle, LORA_TASKS_CORE);
 }
@@ -70,6 +74,11 @@ void LoraMesh::transmit() {
   if (message->type == CONTROL_MESSAGE) {
     transmitControlMessage(message);
   } else if (message->type == IPV4_DATAGRAM_MESSAGE) {
+    if (message->data.ipv4Datagram.size <= MESSAGE_LENGTH) {
+      transmitDataMessage(message);
+    } else {
+      transmitFragmentedDataMessage(message);
+    }
     transmitDataMessage(message);
   }
 
@@ -88,36 +97,41 @@ void LoraMesh::transmitControlMessage(message_t* message) {
 }
 
 void LoraMesh::transmitDataMessage(message_t* message) {
+  Serial.println("transmitt data message (no frag)");
   auto messageLength = message->data.ipv4Datagram.size;
   auto payload = message->data.ipv4Datagram.payload;
 
-  if (messageLength <= MESSAGE_LENGTH) {
+  struct Datagram datagram;
+  datagram.type = message->type;
+  memcpy(datagram.message, payload, messageLength);
+  free(payload);
+  memcpy(datagram.destination, &message->destination, ADDR_LENGTH);
+  layer2->writeData(datagram, DATAGRAM_HEADER + messageLength);
+  Serial.println("done");
+}
+
+void LoraMesh::transmitFragmentedDataMessage(message_t* message) {
+  Serial.println("transmitt data message (WITH frag)");
+  auto messageLength = message->data.ipv4Datagram.size;
+  auto payload = message->data.ipv4Datagram.payload;
+
+  Fragmenter fragmenter(payload, messageLength, MAX_FRAGMENT_SIZE);
+  while (fragmenter.hasNext()) {
+    auto fragment = fragmenter.next();
+
     struct Datagram datagram;
-    datagram.type = message->type;
-    memcpy(datagram.message, payload, messageLength);
-    free(payload);
+    datagram.type = FRAG_DATA;
+
+    memcpy(datagram.message, &fragment.id, 1);
+    memcpy(datagram.message + 1, &fragment.fragmentIndex, 1);
+    memcpy(datagram.message + 2, &fragment.totalSize, 2);
+    memcpy(datagram.message + 4, fragment.data, fragment.fragmentSize);
     memcpy(datagram.destination, &message->destination, ADDR_LENGTH);
     layer2->writeData(datagram, DATAGRAM_HEADER + messageLength);
   }
 
-  else {
-    Fragments fragments(payload, messageLength, MESSAGE_LENGTH - 4);
-    while (fragments.hasNext()) {
-      auto fragment = fragments.next();
-
-      struct Datagram datagram;
-      datagram.type = FRAG_DATA;
-
-      memcpy(datagram.message, &fragment.id, 1);
-      memcpy(datagram.message + 1, &fragment.fragmentIndex, 1);
-      memcpy(datagram.message + 2, &fragment.totalSize, 2);
-      memcpy(datagram.message + 4, fragment.data, fragment.fragmentSize);
-      memcpy(datagram.destination, &message->destination, ADDR_LENGTH);
-      layer2->writeData(datagram, DATAGRAM_HEADER + messageLength);
-    }
-
-    free(payload);
-  }
+  free(payload);
+  Serial.println("done");
 }
 
 void LoraMesh::receive() {
@@ -126,33 +140,86 @@ void LoraMesh::receive() {
     return;
   }
 
+  if (packet.datagram.type == CONTROL_MESSAGE) {
+    receiveControlMessage(packet);
+  } else if (packet.datagram.type == IPV4_DATAGRAM_MESSAGE) {
+    receiveDataMessage(packet);
+  } else if (packet.datagram.type == FRAG_DATA) {
+    receiveFragmentedDataMessage(packet);
+  }
+}
+
+void LoraMesh::receiveControlMessage(struct Packet& packet) {
   message_t message;
   memcpy(&message.source, packet.source, sizeof(uint32_t));
   memcpy(&message.destination, packet.datagram.destination, sizeof(uint32_t));
 
-  if (packet.datagram.type == CONTROL_MESSAGE) {
-    message.type = CONTROL_MESSAGE;
-    memcpy(&message.data.control, packet.datagram.message,
-           sizeof(control_data_t));
-  }
-
-  else if (packet.datagram.type == IPV4_DATAGRAM_MESSAGE) {
-    message.type = IPV4_DATAGRAM_MESSAGE;
-
-    message.data.ipv4Datagram.size =
-        packet.totalLength - HEADER_LENGTH - DATAGRAM_HEADER;
-
-    message.data.ipv4Datagram.payload = malloc(message.data.ipv4Datagram.size);
-    memcpy(message.data.ipv4Datagram.payload, packet.datagram.message,
-           message.data.ipv4Datagram.size);
-  }
+  message.type = CONTROL_MESSAGE;
+  memcpy(&message.data.control, packet.datagram.message,
+         sizeof(control_data_t));
 
   rxQueue->push(&message);
+}
+
+void LoraMesh::receiveDataMessage(struct Packet& packet) {
+  message_t message;
+  memcpy(&message.source, packet.source, sizeof(uint32_t));
+  memcpy(&message.destination, packet.datagram.destination, sizeof(uint32_t));
+
+  message.type = IPV4_DATAGRAM_MESSAGE;
+
+  message.data.ipv4Datagram.size =
+      packet.totalLength - HEADER_LENGTH - DATAGRAM_HEADER;
+
+  message.data.ipv4Datagram.payload = malloc(message.data.ipv4Datagram.size);
+  memcpy(message.data.ipv4Datagram.payload, packet.datagram.message,
+         message.data.ipv4Datagram.size);
+
+  rxQueue->push(&message);
+}
+
+void LoraMesh::receiveFragmentedDataMessage(struct Packet& packet) {
+  uint8_t* message = packet.datagram.message;
+
+  fragment_t fragment;
+  memcpy(&fragment.id, message, 1);
+  memcpy(&fragment.fragmentIndex, message + 1, 1);
+  memcpy(&fragment.totalSize, message + 2, 2);
+  fragment.data = message + 4;
+  fragment.fragmentSize = packet.totalLength - HEADER_LENGTH - DATAGRAM_HEADER -
+                          FRAGMENTATION_HEADER_SIZE;
+
+  Reasembler* reasembler = reasemblers[packet.source[3]][fragment.id];
+  if (reasembler == nullptr) {
+    reasembler = new Reasembler(fragment, MAX_FRAGMENT_SIZE);
+    reasemblers[packet.source[3]][fragment.id] = reasembler;
+  } else {
+    reasembler->read(fragment);
+  }
+
+  if (reasembler->isDone()) {
+    message_t message;
+    memcpy(&message.source, packet.source, sizeof(uint32_t));
+    memcpy(&message.destination, packet.datagram.destination, sizeof(uint32_t));
+
+    message.type = IPV4_DATAGRAM_MESSAGE;
+
+    message.data.ipv4Datagram.size = reasembler->getTotalSize();
+    message.data.ipv4Datagram.payload = malloc(message.data.ipv4Datagram.size);
+    memcpy(message.data.ipv4Datagram.payload, reasembler->getData(),
+           message.data.ipv4Datagram.size);
+
+    rxQueue->push(&message);
+
+    reasemblers[packet.source[3]][fragment.id] = nullptr;
+    delete reasembler;
+  }
 }
 
 DataQueue<message_t>* LoraMesh::getTXQueue() {
   return txQueue;
 }
+
 DataQueue<message_t>* LoraMesh::getRXQueue() {
   return rxQueue;
 }

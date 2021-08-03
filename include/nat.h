@@ -10,7 +10,8 @@
 
 typedef struct {
   bool freeEntry : 1;
-  uint8_t protocol : 7;
+  bool recentlyUsed : 1;
+  uint8_t protocol : 6;
   uint32_t sourceNode;
   uint32_t sourceIP;
   uint16_t sourcePort;

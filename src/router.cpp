@@ -88,11 +88,12 @@ bool AcessPointRouter::routeMessageFromWiFi(message_t* message) {
 }
 
 uint32_t AcessPointRouter::getGatewayAddress() {
-  auto now = esp_timer_get_time();
-  if (now - lastGatewaySeenTime > GW_ANNOUNCEMENT_DEADLINE)
-    return 0;
+  // auto now = esp_timer_get_time();
+  // if (now - lastGatewaySeenTime > GW_ANNOUNCEMENT_DEADLINE)
+  //   return 0;
 
-  return lastGatewayAddress;
+  // return lastGatewayAddress;
+  return 0xffaaffff;
 }
 
 /*

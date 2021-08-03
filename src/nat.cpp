@@ -29,13 +29,13 @@ void GatewayNAT::translate(ipv4_datagram_t* datagram, uint32_t sourceNode) {
   size_t size = datagram->size;
 
   gw_nat_flow_entry_t entry = {.freeEntry = false,
+                               .recentlyUsed = true,
                                .protocol = ipv4->protocol,
                                .sourceNode = sourceNode,
                                .sourceIP = ipv4->sourceIP,
                                .sourcePort = 0,
                                .destinationIP = ipv4->destinationIP,
-                               .destinationPort = 0,
-                               .flag = 1};
+                               .destinationPort = 0};
   getL4PortNumbers(ipv4, size, &entry.sourcePort, &entry.destinationPort);
 
   uint16_t index = 0;
@@ -48,7 +48,6 @@ void GatewayNAT::translate(ipv4_datagram_t* datagram, uint32_t sourceNode) {
         entries[index].sourceIP == entry.sourceIP &&
         entries[index].sourceNode == entry.sourceNode &&
         entries[index].sourcePort == entry.sourcePort) {
-      entries[index].flag = 1;
       break;
     } else if (freeIndex == -1 && entries[index].freeEntry) {
       freeIndex = index;
@@ -63,6 +62,8 @@ void GatewayNAT::translate(ipv4_datagram_t* datagram, uint32_t sourceNode) {
       entries[index] = entry;
     }
   }
+
+  entries[index].recentlyUsed = true;
 
   if (ipv4->protocol != ICMP) {
     uint16_t publicPort = index + PUBLIC_PORT_OFFSET;
@@ -92,16 +93,16 @@ uint32_t GatewayNAT::revert(ipv4_datagram_t* datagram) {
 
   ipv4->destinationIP = tableEntry->sourceIP;
   setL4Port(ipv4, size, tableEntry->sourcePort, DESTINATION_PORT_INDEX);
-  tableEntry->flag = 1;
+  tableEntry->recentlyUsed = true;
 
   return tableEntry->sourceNode;
 }
 
 void GatewayNAT::clean() {
   for (auto& entry : entries) {
-    if (entry.freeEntry == false && entry.flag == 1) {
-      entry.flag = 0;
-    } else if (entry.freeEntry == false && entry.flag == 0) {
+    if (!entry.freeEntry && entry.recentlyUsed) {
+      entry.recentlyUsed = false;
+    } else if (!entry.freeEntry && !entry.recentlyUsed) {
       entry.freeEntry = true;
     }
   }
