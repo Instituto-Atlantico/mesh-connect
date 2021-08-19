@@ -7,7 +7,7 @@ uint8_t Fragmenter::nextId = 0;
 Fragmenter::Fragmenter(void* data, uint16_t size, uint8_t maxFragmentSize) {
   this->id = nextId++;
   this->data = data;
-  this->totalSize = totalSize;
+  this->totalSize = size;
   this->maxFragmentSize = maxFragmentSize;
   this->count = size / maxFragmentSize + (size % maxFragmentSize != 0);
   this->currentFragment = 0;
@@ -30,12 +30,17 @@ fragment_t Fragmenter::next() {
   if (!hasNext())
     throw "No more fragments to read";
 
+  uint8_t fragmentSize = maxFragmentSize;
+  if (currentFragment == count - 1 && totalSize % maxFragmentSize != 0) {
+    fragmentSize = totalSize % maxFragmentSize;
+  }
+
   return fragment_t{
       .id = id,
-      .fragmentIndex = currentFragment++,
-      .fragmentSize = maxFragmentSize,
+      .fragmentIndex = currentFragment,
+      .fragmentSize = fragmentSize,
       .totalSize = totalSize,
-      .data = ((uint8_t*)data) + (currentFragment * maxFragmentSize)};
+      .data = ((uint8_t*)data) + (currentFragment++ * maxFragmentSize)};
 }
 
 void Fragmenter::reset() {
@@ -48,7 +53,7 @@ Reasembler::Reasembler(fragment_t fragment, uint8_t maxFragmentSize) {
   data = calloc(fragment.totalSize, sizeof(uint8_t));
   totalSize = fragment.totalSize;
   this->maxFragmentSize = maxFragmentSize;
-  count = totalSize / maxFragmentSize + (totalSize % maxFragmentSize != 0);
+  count = totalSize / maxFragmentSize + (totalSize % maxFragmentSize != 0); //está correto?
   missingCount = count;
   read(fragment);
 }
