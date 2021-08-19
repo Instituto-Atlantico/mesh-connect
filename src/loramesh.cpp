@@ -22,7 +22,11 @@
 #define BOOT_LL1_DELAY_MICROS 500
 #define MAX_BOOT_LL1_RETRIES 10
 
-#define FRAG_DATA 50
+enum loraMessageTypes {
+  LORA_CONTROL_MESSAGE = 1,
+  LORA_DATA_MESSAGE = 2,
+  LORA_FRAGMENTED_DATA_MESSAGE = 3,
+};
 
 static void task(void* pointer) {
   auto loraMesh = (LoraMesh*)pointer;
@@ -77,74 +81,81 @@ void LoraMesh::transmit() {
     if (message->data.ipv4Datagram.size <= MESSAGE_LENGTH) {
       transmitDataMessage(message);
     } else {
-      transmitFragmentedDataMessage(message);
+      // transmitFragmentedDataMessage(message);
     }
-    transmitDataMessage(message);
   }
 
   free(message);
 }
 
 void LoraMesh::transmitControlMessage(message_t* message) {
+  Serial.println("transmitt control message");  // FIXME
   int messageLength = sizeof(control_data_t);
 
   struct Datagram datagram;
-  datagram.type = message->type;
+  datagram.type = LORA_CONTROL_MESSAGE;
   memcpy(datagram.message, &message->data.control, messageLength);
   memcpy(datagram.destination, &message->destination, ADDR_LENGTH);
 
   layer2->writeData(datagram, DATAGRAM_HEADER + messageLength);
+  Serial.println("done");  // FIXME
 }
 
 void LoraMesh::transmitDataMessage(message_t* message) {
-  Serial.println("transmitt data message (no frag)");
+  Serial.println("transmitt data message (no frag)");  // FIXME
   auto messageLength = message->data.ipv4Datagram.size;
   auto payload = message->data.ipv4Datagram.payload;
 
   struct Datagram datagram;
-  datagram.type = message->type;
+  datagram.type = LORA_DATA_MESSAGE;
   memcpy(datagram.message, payload, messageLength);
   free(payload);
   memcpy(datagram.destination, &message->destination, ADDR_LENGTH);
   layer2->writeData(datagram, DATAGRAM_HEADER + messageLength);
-  Serial.println("done");
+  Serial.println("done");  // FIXME
 }
 
 void LoraMesh::transmitFragmentedDataMessage(message_t* message) {
-  Serial.println("transmitt data message (WITH frag)");
+  Serial.println("transmitt data message (WITH frag)");  // FIXME
   auto messageLength = message->data.ipv4Datagram.size;
   auto payload = message->data.ipv4Datagram.payload;
 
   Fragmenter fragmenter(payload, messageLength, MAX_FRAGMENT_SIZE);
+
   while (fragmenter.hasNext()) {
     auto fragment = fragmenter.next();
 
     struct Datagram datagram;
-    datagram.type = FRAG_DATA;
+    datagram.type = LORA_FRAGMENTED_DATA_MESSAGE;
 
     memcpy(datagram.message, &fragment.id, 1);
     memcpy(datagram.message + 1, &fragment.fragmentIndex, 1);
     memcpy(datagram.message + 2, &fragment.totalSize, 2);
     memcpy(datagram.message + 4, fragment.data, fragment.fragmentSize);
     memcpy(datagram.destination, &message->destination, ADDR_LENGTH);
-    layer2->writeData(datagram, DATAGRAM_HEADER + messageLength);
+    layer2->writeData(datagram, DATAGRAM_HEADER + FRAGMENTATION_HEADER_SIZE +
+                                    fragment.fragmentSize);
+    Serial.println("data message fragment sent...");  // FIXME
+    layer2->daemon();
   }
 
   free(payload);
-  Serial.println("done");
+  Serial.println("done");  // FIXME
 }
 
 void LoraMesh::receive() {
+  layer2->daemon();
+
   struct Packet packet = layer2->readData();
   if (packet.totalLength < MIN_PACKET_LENGTH) {
     return;
   }
 
-  if (packet.datagram.type == CONTROL_MESSAGE) {
+  if (packet.datagram.type == LORA_CONTROL_MESSAGE) {
     receiveControlMessage(packet);
-  } else if (packet.datagram.type == IPV4_DATAGRAM_MESSAGE) {
+  } else if (packet.datagram.type == LORA_DATA_MESSAGE) {
     receiveDataMessage(packet);
-  } else if (packet.datagram.type == FRAG_DATA) {
+  } else if (packet.datagram.type == LORA_FRAGMENTED_DATA_MESSAGE) {
     receiveFragmentedDataMessage(packet);
   }
 }
@@ -162,6 +173,8 @@ void LoraMesh::receiveControlMessage(struct Packet& packet) {
 }
 
 void LoraMesh::receiveDataMessage(struct Packet& packet) {
+  Serial.println("receive data message (no frag)");  // FIXME
+
   message_t message;
   memcpy(&message.source, packet.source, sizeof(uint32_t));
   memcpy(&message.destination, packet.datagram.destination, sizeof(uint32_t));
@@ -176,9 +189,11 @@ void LoraMesh::receiveDataMessage(struct Packet& packet) {
          message.data.ipv4Datagram.size);
 
   rxQueue->push(&message);
+  Serial.println("done");  // FIXME
 }
 
 void LoraMesh::receiveFragmentedDataMessage(struct Packet& packet) {
+  Serial.println("receive data message (with frag)");  // FIXME
   uint8_t* message = packet.datagram.message;
 
   fragment_t fragment;
@@ -214,6 +229,7 @@ void LoraMesh::receiveFragmentedDataMessage(struct Packet& packet) {
     reasemblers[packet.source[3]][fragment.id] = nullptr;
     delete reasembler;
   }
+  Serial.println("done");  // FIXME
 }
 
 DataQueue<message_t>* LoraMesh::getTXQueue() {
