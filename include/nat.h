@@ -17,7 +17,6 @@ typedef struct {
   uint16_t sourcePort;
   uint32_t destinationIP;
   uint16_t destinationPort;
-  uint8_t flag;
 } gw_nat_flow_entry_t;  // 18 bytes
 
 class GatewayNAT {
